@@ -155,11 +155,11 @@ require (
 	go.opentelemetry.io/otel/trace v1.21.0
 	go.opentelemetry.io/proto/otlp v1.0.0
 	golang.org/x/crypto v0.17.0
-	golang.org/x/exp v0.0.0-20230213192124-5e25df0256eb
-	golang.org/x/mod v0.13.0
+	golang.org/x/exp v0.0.0-20240103183307-be819d1f06fc
+	golang.org/x/mod v0.14.0
 	golang.org/x/net v0.19.0
 	golang.org/x/oauth2 v0.13.0
-	golang.org/x/sync v0.4.0
+	golang.org/x/sync v0.5.0
 	golang.org/x/sys v0.15.0
 	golang.org/x/term v0.15.0
 	golang.org/x/text v0.14.0
@@ -377,7 +377,7 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.26.0 // indirect
-	golang.org/x/tools v0.14.0 // indirect
+	golang.org/x/tools v0.16.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.3.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
