@@ -756,6 +756,7 @@ type ClientI interface {
 	services.Apps
 	services.Databases
 	services.DatabaseServices
+	services.DatabaseObjectsImportRules
 	services.Kubernetes
 	services.WindowsDesktops
 	services.SAMLIdPServiceProviders
