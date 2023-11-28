@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"log/slog"
 	"regexp"
 	"strings"
 	"testing"
@@ -32,6 +31,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slog"
 )
 
 const message = "Adding diagnostic debugging handlers.\t To connect with profiler, use `go tool pprof diag_addr`."
