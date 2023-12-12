@@ -274,6 +274,11 @@ type Config struct {
 	// Eg, v13.4.3
 	// Optional: uses cloud/stable channel when omitted.
 	AutomaticUpgradesVersionURL string
+
+	// AutomaticUpgradesChannels is a map of all version channels used by the
+	// proxy built-in version server to retrieve target versions. This is part
+	// of the automatic upgrades.
+	AutomaticUpgradesChannels automaticupgrades.Channels
 }
 
 // SetDefaults ensures proper default values are set if
@@ -828,6 +833,10 @@ func (h *Handler) bindDefaultEndpoints() {
 
 	// Updates the user's preferences
 	h.PUT("/webapi/user/preferences", h.WithAuth(h.updateUserPreferences))
+
+	// Implements the agent version server.
+	// Channel can contain "/", hence the use of a catch-all parameter
+	h.GET("/webapi/automaticupgrades/channel/*request", h.WithLimiter(h.automaticUpgrades))
 }
 
 // GetProxyClient returns authenticated auth server client
