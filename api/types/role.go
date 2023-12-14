@@ -1853,6 +1853,7 @@ var LabelMatcherKinds = []string{
 
 const (
 	createHostUserModeOffString          = "off"
+	createHostUserModeDropString         = "drop"
 	createHostUserModeKeepString         = "keep"
 	createHostUserModeInsecureDropString = "insecure-drop"
 )
@@ -1865,7 +1866,7 @@ func (h CreateHostUserMode) encode() (string, error) {
 		return createHostUserModeOffString, nil
 	case CreateHostUserMode_HOST_USER_MODE_KEEP:
 		return createHostUserModeKeepString, nil
-	case CreateHostUserMode_HOST_USER_MODE_INSECURE_DROP:
+	case CreateHostUserMode_HOST_USER_MODE_INSECURE_DROP, CreateHostUserMode_HOST_USER_MODE_DROP:
 		return createHostUserModeInsecureDropString, nil
 	}
 	return "", trace.BadParameter("invalid host user mode %v", h)
@@ -1912,6 +1913,10 @@ func (h *CreateHostUserMode) decode(val any) error {
 
 // setFromEnum sets the value from enum value as int32.
 func (h *CreateHostUserMode) setFromEnum(val int32) error {
+	// TODO(atburke) DELETE IN 16.0.0
+	if val == 2 {
+		val = 4
+	}
 	if _, ok := CreateHostUserMode_name[val]; !ok {
 		return trace.BadParameter("invalid host user mode %v", val)
 	}
