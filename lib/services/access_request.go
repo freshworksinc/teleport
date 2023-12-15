@@ -36,20 +36,25 @@ import (
 	apidefaults "github.com/gravitational/teleport/api/defaults"
 	"github.com/gravitational/teleport/api/types"
 	apiutils "github.com/gravitational/teleport/api/utils"
-	"github.com/gravitational/teleport/lib/defaults"
 	"github.com/gravitational/teleport/lib/tlsca"
 	"github.com/gravitational/teleport/lib/utils"
 	"github.com/gravitational/teleport/lib/utils/parse"
 )
 
-const maxAccessRequestReasonSize = 4096
+const (
+	maxAccessRequestReasonSize = 4096
 
-// A day is sometimes 23 hours, sometimes 25 hours, usually 24 hours.
-const day = 24 * time.Hour
+	// A day is sometimes 23 hours, sometimes 25 hours, usually 24 hours.
+	day = 24 * time.Hour
 
-// maxAccessDuration is the maximum duration that an access request can be
-// granted for.
-const maxAccessDuration = 7 * day
+	// maxAccessDuration is the maximum duration that an access request can be
+	// granted for.
+	maxAccessDuration = 7 * day
+
+	// requestTTL is the the TTL for an access request, i.e. the amount of time that
+	// the access request can be reviewed. Defaults to 1 week.
+	requestTTL = 7 * day
+)
 
 // ValidateAccessRequest validates the AccessRequest and sets default values
 func ValidateAccessRequest(ar types.AccessRequest) error {
@@ -1176,12 +1181,8 @@ func (m *RequestValidator) Validate(ctx context.Context, req types.AccessRequest
 
 		now := m.clock.Now().UTC()
 
-		// Calculate the expiration time of the Access Request (how long it
-		// will await approval).
-		ttl, err := m.requestTTL(ctx, identity, req)
-		if err != nil {
-			return trace.Wrap(err)
-		}
+		// Default to the regular request TTL.
+		ttl := requestTTL
 		req.SetExpiry(now.Add(ttl))
 
 		maxDuration, err := m.calculateMaxAccessDuration(req)
@@ -1268,35 +1269,6 @@ func (m *RequestValidator) calculateMaxAccessDuration(req types.AccessRequest) (
 	}
 
 	return minAdjDuration, nil
-}
-
-// requestTTL calculates the TTL of the Access Request (how long it will await
-// approval).
-func (m *RequestValidator) requestTTL(ctx context.Context, identity tlsca.Identity, r types.AccessRequest) (time.Duration, error) {
-	// If no expiration provided, use default.
-	expiry := r.Expiry()
-	if expiry.IsZero() {
-		expiry = m.clock.Now().UTC().Add(defaults.PendingAccessDuration)
-	}
-
-	if expiry.Before(m.clock.Now().UTC()) {
-		return 0, trace.BadParameter("invalid request TTL: Access Request can not be created in the past")
-	}
-
-	ttl, err := m.truncateTTL(ctx, identity, expiry, r.GetRoles())
-	if err != nil {
-		return 0, trace.BadParameter("invalid request TTL: %v", err)
-	}
-
-	// Before returning the TTL, validate that the value requested was smaller
-	// than the maximum value allowed. Used to return a sensible error to the
-	// user.
-	requestedTTL := expiry.Sub(m.clock.Now().UTC())
-	if !r.Expiry().IsZero() && requestedTTL > ttl {
-		return 0, trace.BadParameter("invalid request TTL: %v greater than maximum allowed (%v)", requestedTTL.Round(time.Minute), ttl.Round(time.Minute))
-	}
-
-	return ttl, nil
 }
 
 // sessionTTL calculates the TTL of the elevated certificate that will be issued
