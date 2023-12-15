@@ -1901,6 +1901,8 @@ func (h *CreateHostUserMode) decode(val any) error {
 		*h = CreateHostUserMode_HOST_USER_MODE_UNSPECIFIED
 	case createHostUserModeOffString:
 		*h = CreateHostUserMode_HOST_USER_MODE_OFF
+	case createHostUserModeDropString:
+		*h = CreateHostUserMode_HOST_USER_MODE_DROP
 	case createHostUserModeKeepString:
 		*h = CreateHostUserMode_HOST_USER_MODE_KEEP
 	case createHostUserModeInsecureDropString:
