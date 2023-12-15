@@ -93,8 +93,7 @@ func TestHostUserDrop(t *testing.T) {
 					},
 				})
 				require.NoError(t, err)
-				_, err = access.UpsertRole(ctx, role)
-				require.NoError(t, err)
+				access.roles[role.GetName()] = role
 			}
 			require.NoError(t, tc.migrateFn(ctx, b))
 
@@ -121,7 +120,9 @@ func (f *fakeAccess) GetRoles(_ context.Context) ([]types.Role, error) {
 	return maps.Values(f.roles), nil
 }
 
-func (f *fakeAccess) UpsertRole(_ context.Context, role types.Role) (types.Role, error) {
-	f.roles[role.GetName()] = role
+func (f *fakeAccess) UpdateRole(_ context.Context, role types.Role) (types.Role, error) {
+	if _, ok := f.roles[role.GetName()]; ok {
+		f.roles[role.GetName()] = role
+	}
 	return role, nil
 }

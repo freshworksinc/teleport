@@ -28,6 +28,8 @@ import (
 	"github.com/gravitational/trace"
 )
 
+// hostUserDrop performs a migration which maps the deprecated 'drop' host
+// user creation mode to 'insecure-drop'. Introduced in v15.
 type hostUserDrop struct {
 	accessServiceFn func(b backend.Backend) services.Access
 }
@@ -37,11 +39,14 @@ func (d hostUserDrop) Version() int64 {
 }
 
 func (d hostUserDrop) Name() string {
-	return "migrate_host_user_creation_drop"
+	return "host_user_drop"
 }
 
+// Up updates all roles that use the 'drop' host user creation mode to use
+// 'insecure-drop' instead. Roles that have other host user creation modes
+// or none are skipped.
 func (d hostUserDrop) Up(ctx context.Context, b backend.Backend) error {
-	ctx, span := tracer.Start(ctx, "migrateHostUserCreationDrop/Up")
+	ctx, span := tracer.Start(ctx, "hostUserDrop/Up")
 	defer span.End()
 
 	if d.accessServiceFn == nil {
@@ -50,11 +55,17 @@ func (d hostUserDrop) Up(ctx context.Context, b backend.Backend) error {
 		}
 	}
 
-	return trace.Wrap(d.up(ctx, d.accessServiceFn(b)))
+	return trace.Wrap(d.mapHostUserCreationMode(ctx, d.accessServiceFn(b),
+		types.CreateHostUserMode_HOST_USER_MODE_DROP,          // from
+		types.CreateHostUserMode_HOST_USER_MODE_INSECURE_DROP, // to
+	))
 }
 
+// Down updates all roles that use the 'insecure-drop' host user creation mode
+// to use 'drop' instead. Roles that have other host user creation modes
+// or none are skipped.
 func (d hostUserDrop) Down(ctx context.Context, b backend.Backend) error {
-	ctx, span := tracer.Start(ctx, "migrateHostUserCreationDrop/Down")
+	ctx, span := tracer.Start(ctx, "hostUserDrop/Down")
 	defer span.End()
 
 	if d.accessServiceFn == nil {
@@ -63,7 +74,10 @@ func (d hostUserDrop) Down(ctx context.Context, b backend.Backend) error {
 		}
 	}
 
-	return trace.Wrap(d.down(ctx, d.accessServiceFn(b)))
+	return trace.Wrap(d.mapHostUserCreationMode(ctx, d.accessServiceFn(b),
+		types.CreateHostUserMode_HOST_USER_MODE_INSECURE_DROP, // from
+		types.CreateHostUserMode_HOST_USER_MODE_DROP,          // to
+	))
 }
 
 func (d hostUserDrop) mapHostUserCreationMode(ctx context.Context, access services.Access, from, to types.CreateHostUserMode) error {
@@ -76,18 +90,10 @@ func (d hostUserDrop) mapHostUserCreationMode(ctx context.Context, access servic
 		if options.CreateHostUserMode == from {
 			options.CreateHostUserMode = to
 			role.SetOptions(options)
-			if _, err := access.UpsertRole(ctx, role); err != nil {
+			if _, err := access.UpdateRole(ctx, role); err != nil {
 				return trace.Wrap(err)
 			}
 		}
 	}
 	return nil
-}
-
-func (d hostUserDrop) up(ctx context.Context, access services.Access) error {
-	return trace.Wrap(d.mapHostUserCreationMode(ctx, access, types.CreateHostUserMode_HOST_USER_MODE_DROP, types.CreateHostUserMode_HOST_USER_MODE_INSECURE_DROP))
-}
-
-func (d hostUserDrop) down(ctx context.Context, access services.Access) error {
-	return trace.Wrap(d.mapHostUserCreationMode(ctx, access, types.CreateHostUserMode_HOST_USER_MODE_INSECURE_DROP, types.CreateHostUserMode_HOST_USER_MODE_DROP))
 }

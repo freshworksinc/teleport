@@ -1915,6 +1915,7 @@ func (h *CreateHostUserMode) decode(val any) error {
 
 // setFromEnum sets the value from enum value as int32.
 func (h *CreateHostUserMode) setFromEnum(val int32) error {
+	// Map DROP to INSECURE_DROP
 	// TODO(atburke) DELETE IN 16.0.0
 	if val == 2 {
 		val = 4
