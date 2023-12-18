@@ -111,7 +111,7 @@ export function middleValues(
 // Generate a list of middle values between now and the request TTL.
 export function requestTtlMiddleValues(
   created: Date,
-  requestTTL: Date
+  requestTtl: Date
 ): TimeDuration[] {
   const getInterval = (d: Date) =>
     roundToNearestTenMinutes(
@@ -121,11 +121,11 @@ export function requestTtlMiddleValues(
       })
     );
 
-  if (isAfter(addHours(created, 1), requestTTL)) {
+  if (isAfter(addHours(created, 1), requestTtl)) {
     return [
       {
-        timestamp: requestTTL.getTime(),
-        duration: getInterval(requestTTL),
+        timestamp: requestTtl.getTime(),
+        duration: getInterval(requestTtl),
       },
     ];
   }
@@ -136,7 +136,7 @@ export function requestTtlMiddleValues(
 
   for (const h of hourOptions) {
     const t = addHours(created, h);
-    if (isAfter(t, requestTTL)) {
+    if (isAfter(t, requestTtl)) {
       break;
     }
     points.push(t);
