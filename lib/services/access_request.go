@@ -1181,8 +1181,12 @@ func (m *RequestValidator) Validate(ctx context.Context, req types.AccessRequest
 
 		now := m.clock.Now().UTC()
 
-		// Default to the regular request TTL.
-		ttl := requestTTL
+		// Calculate the expiration time of the Access Request (how long it
+		// will await approval).
+		ttl, err := m.requestTTL(ctx, identity, req)
+		if err != nil {
+			return trace.Wrap(err)
+		}
 		req.SetExpiry(now.Add(ttl))
 
 		maxDuration, err := m.calculateMaxAccessDuration(req)
@@ -1269,6 +1273,30 @@ func (m *RequestValidator) calculateMaxAccessDuration(req types.AccessRequest) (
 	}
 
 	return minAdjDuration, nil
+}
+
+// requestTTL calculates the TTL of the Access Request (how long it will await
+// approval).
+func (m *RequestValidator) requestTTL(ctx context.Context, identity tlsca.Identity, r types.AccessRequest) (time.Duration, error) {
+	// If no expiration provided, use default.
+	expiry := r.Expiry()
+	if expiry.IsZero() {
+		expiry = m.clock.Now().UTC().Add(requestTTL)
+	}
+
+	if expiry.Before(m.clock.Now().UTC()) {
+		return 0, trace.BadParameter("invalid request TTL: Access Request can not be created in the past")
+	}
+
+	// Before returning the TTL, validate that the value requested was smaller
+	// than the maximum value allowed. Used to return a sensible error to the
+	// user.
+	requestedTTL := expiry.Sub(m.clock.Now().UTC())
+	if !r.Expiry().IsZero() && requestedTTL > requestTTL {
+		return 0, trace.BadParameter("invalid request TTL: %v greater than maximum allowed (%v)", requestedTTL.Round(time.Minute), requestTTL.Round(time.Minute))
+	}
+
+	return requestedTTL, nil
 }
 
 // sessionTTL calculates the TTL of the elevated certificate that will be issued
