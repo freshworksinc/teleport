@@ -2072,6 +2072,7 @@ func maybeDowngradeRole(ctx context.Context, role *types.RoleV6) (*types.RoleV6,
 		return nil, trace.Wrap(err)
 	}
 
+	role = maybeDowngradeRoleHostUserCreationMode(role, clientVersion)
 	return role, nil
 }
 
@@ -2252,6 +2253,37 @@ func downgradeRoleToV6(r *types.RoleV6) (*types.RoleV6, bool, error) {
 	default:
 		return nil, false, trace.BadParameter("unrecognized role version %T", r.Version)
 	}
+}
+
+var minSupportedInsecureDropMode12 = semver.Version{Major: 12, Minor: 4, Patch: 30}
+var minSupportedInsecureDropMode13 = semver.Version{Major: 13, Minor: 4, Patch: 11}
+var minSupportedInsecureDropMode14 = semver.Version{Major: 14, Minor: 2, Patch: 2}
+
+// maybeDowngradeRoleHostUserCreationMode tests the client version passed through the gRPC metadata, and
+// if the client version is less than the minimum supported version for the insecure-drop
+// host user creation mode returns a shallow copy of the role with mode drop. If the
+// passed in role does not have mode insecure-drop or the client is a supported version,
+// the role is returned unchanged.
+func maybeDowngradeRoleHostUserCreationMode(role *types.RoleV6, clientVersion *semver.Version) *types.RoleV6 {
+	if role.GetOptions().CreateHostUserMode != types.CreateHostUserMode_HOST_USER_MODE_INSECURE_DROP {
+		return role
+	}
+	if (clientVersion.Major == 12 && !clientVersion.LessThan(minSupportedInsecureDropMode12)) ||
+		(clientVersion.Major == 13 && !clientVersion.LessThan(minSupportedInsecureDropMode13)) ||
+		(clientVersion.Major == 14 && !clientVersion.LessThan(minSupportedInsecureDropMode14)) {
+		return role
+	}
+
+	// Make a shallow copy of the role so that we don't mutate the original.
+	// This is necessary because the role is shared
+	// between multiple clients sessions when notifying about changes in watchers.
+	// If we mutate the original role, it will be mutated for all clients
+	// which can cause panics since it causes a race condition.
+	role = apiutils.CloneProtoMsg(role)
+	options := role.GetOptions()
+	options.CreateHostUserMode = types.CreateHostUserMode_HOST_USER_MODE_DROP
+	role.SetOptions(options)
+	return role
 }
 
 // GetRole retrieves a role by name.

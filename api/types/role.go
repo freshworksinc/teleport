@@ -1864,6 +1864,8 @@ func (h CreateHostUserMode) encode() (string, error) {
 		return "", nil
 	case CreateHostUserMode_HOST_USER_MODE_OFF:
 		return createHostUserModeOffString, nil
+	case CreateHostUserMode_HOST_USER_MODE_DROP:
+		return createHostUserModeDropString, nil
 	case CreateHostUserMode_HOST_USER_MODE_KEEP:
 		return createHostUserModeKeepString, nil
 	case CreateHostUserMode_HOST_USER_MODE_INSECURE_DROP:
