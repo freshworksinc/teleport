@@ -959,11 +959,12 @@ func (g *GRPCServer) SetAccessRequestState(ctx context.Context, req *authpb.Requ
 		ctx = authz.WithDelegator(ctx, req.Delegator)
 	}
 	if err := auth.ServerWithRoles.SetAccessRequestState(ctx, types.AccessRequestUpdate{
-		RequestID:   req.ID,
-		State:       req.State,
-		Reason:      req.Reason,
-		Annotations: req.Annotations,
-		Roles:       req.Roles,
+		RequestID:       req.ID,
+		State:           req.State,
+		Reason:          req.Reason,
+		Annotations:     req.Annotations,
+		Roles:           req.Roles,
+		AssumeStartTime: req.AssumeStartTime,
 	}); err != nil {
 		return nil, trace.Wrap(err)
 	}
@@ -3039,7 +3040,7 @@ func (g *GRPCServer) GetOIDCConnector(ctx context.Context, req *types.ResourceWi
 	return connector, nil
 }
 
-// GetOIDCConnectors retrieves all OIDC connectors.
+// GetOIDCConnectors retrieves valid OIDC connectors, errors from individual connectors are not forwarded.
 func (g *GRPCServer) GetOIDCConnectors(ctx context.Context, req *types.ResourcesWithSecretsRequest) (*types.OIDCConnectorV3List, error) {
 	auth, err := g.authenticate(ctx)
 	if err != nil {
@@ -3183,7 +3184,7 @@ func (g *GRPCServer) GetSAMLConnector(ctx context.Context, req *types.ResourceWi
 	return samlConnectorV2, nil
 }
 
-// GetSAMLConnectors retrieves all SAML connectors.
+// GetSAMLConnectors retrieves valid SAML connectors, errors from individual connectors are not forwarded.
 func (g *GRPCServer) GetSAMLConnectors(ctx context.Context, req *types.ResourcesWithSecretsRequest) (*types.SAMLConnectorV2List, error) {
 	auth, err := g.authenticate(ctx)
 	if err != nil {
@@ -3329,7 +3330,7 @@ func (g *GRPCServer) GetGithubConnector(ctx context.Context, req *types.Resource
 	return githubConnectorV3, nil
 }
 
-// GetGithubConnectors retrieves all Github connectors.
+// GetGithubConnectors retrieves valid GitHub connectors, errors from individual connectors are not forwarded.
 func (g *GRPCServer) GetGithubConnectors(ctx context.Context, req *types.ResourcesWithSecretsRequest) (*types.GithubConnectorV3List, error) {
 	auth, err := g.authenticate(ctx)
 	if err != nil {

@@ -36,7 +36,7 @@ RUN yum groupinstall -y 'Development Tools' && \
 
 # As mentioned above, these packages are unsigned.
 RUN yum install --nogpgcheck -y \
-        ${DEVTOOLSET}-gcc* \
+        ${DEVTOOLSET}-gcc \
         ${DEVTOOLSET}-make && \
     yum clean all
 
@@ -82,7 +82,7 @@ RUN yum groupinstall -y 'Development Tools' && \
 
 # As mentioned above, these packages are unsigned.
 RUN yum install --nogpgcheck -y \
-        ${DEVTOOLSET}-gcc* && \
+        ${DEVTOOLSET}-gcc && \
     yum clean all
 
 # Install libudev-zero.
@@ -108,7 +108,7 @@ RUN git clone --depth=1 https://github.com/PJK/libcbor.git -b v0.10.2 && \
 RUN git clone --depth=1 https://github.com/openssl/openssl.git -b openssl-3.0.12 && \
     cd openssl && \
     [ "$(git rev-parse HEAD)" = 'c3cc0f1386b0544383a61244a4beeb762b67498f' ] && \
-    ./config --release --libdir=/usr/local/lib64 && \
+    ./config --release -fPIC --libdir=/usr/local/lib64 && \
     make -j"$(nproc)" && \
     make install_sw
 # Necessary for libfido2 to find the correct libcrypto.
@@ -125,6 +125,7 @@ RUN git clone --depth=1 https://github.com/Yubico/libfido2.git -b 1.13.0 && \
           -DBUILD_EXAMPLES=OFF \
           -DBUILD_MANPAGES=OFF \
           -DBUILD_TOOLS=OFF \
+          -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
           -DCMAKE_BUILD_TYPE=Release . && \
       grep 'CRYPTO_VERSION:INTERNAL=3\.0\.' CMakeCache.txt && \
       make" && \
@@ -153,15 +154,19 @@ RUN yum groupinstall -y 'Development Tools' && \
     yum -y install centos-release-scl-rh && \
     yum install -y \
         centos-release-scl \
-        elfutils-libelf-devel-static \
         scl-utils && \
     yum clean all
 
 # As mentioned above, these packages are unsigned.
 RUN yum install --nogpgcheck -y \
-        ${DEVTOOLSET}-gcc* \
+        ${DEVTOOLSET}-gcc \
         ${DEVTOOLSET}-make && \
     yum clean all
+
+# Install custom package with -fPIC.
+COPY --from=teleport-buildbox-centos7-assets /opt/custom-packages /opt/custom-packages
+RUN rpm -ivh /opt/custom-packages/elfutils-libelf-devel-static.*.rpm && \
+    rm -rf /opt/custom-packages
 
 # Install libbpf - compile with a newer GCC. The one installed by default is not able to compile it.
 # BUILD_STATIC_ONLY - builds only static libraries without shared ones
@@ -197,12 +202,13 @@ RUN yum groupinstall -y 'Development Tools' && \
         autoconf-archive \
         libudev-devel \
         scl-utils \
-        centos-release-scl \
+        centos-release-scl && \
     yum clean all
 
 # As mentioned above, these packages are unsigned.
 RUN yum install --nogpgcheck -y \
-        ${DEVTOOLSET}-gcc* && \
+        ${DEVTOOLSET}-gcc \
+        ${DEVTOOLSET}-gcc-c++ && \
     yum clean all
 
 # Install libpcsclite - compile with a newer GCC. The one installed by default is not able to compile it.
@@ -248,8 +254,6 @@ RUN yum groupinstall -y 'Development Tools' && \
     yum install -y \
     # required by libbpf
     centos-release-scl \
-    # required by libbpf
-    elfutils-libelf-devel-static \
     net-tools \
     # required by Teleport PAM support
     pam-devel \
@@ -257,17 +261,22 @@ RUN yum groupinstall -y 'Development Tools' && \
     tree \
     # used by our Makefile
     which \
-    zip \
-    # required by libbpf
-    zlib-static && \
+    zip && \
     yum clean all && \
     localedef -c -i en_US -f UTF-8 en_US.UTF-8
 
 # As mentioned above, these packages are unsigned.
 RUN yum install --nogpgcheck -y \
-        ${DEVTOOLSET}-gcc* \
+        ${DEVTOOLSET}-gcc \
+        ${DEVTOOLSET}-gcc-c++ \
         ${DEVTOOLSET}-make && \
     yum clean all
+
+# Install custom packages with -fPIC.
+COPY --from=teleport-buildbox-centos7-assets /opt/custom-packages /opt/custom-packages
+RUN rpm -ivh /opt/custom-packages/elfutils-libelf-devel-static.*.rpm \
+        /opt/custom-packages/zlib-static.*.rpm && \
+    rm -rf /opt/custom-packages
 
 # Override the old git in /usr/local installed by yum. We need git 2+ on GitHub Actions.
 COPY --from=git2 /opt/git /
