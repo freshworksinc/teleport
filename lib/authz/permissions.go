@@ -762,6 +762,11 @@ func roleSpecForProxy(clusterName string) types.RoleSpecV6 {
 						),
 					).String(),
 				},
+
+				{
+					Resources: []string{types.KindPlugin},
+					Verbs:     []string{types.VerbList},
+				},
 			},
 		},
 	}
@@ -1037,6 +1042,14 @@ func definitionForBuiltinRole(clusterName string, recConfig types.SessionRecordi
 						types.NewRule(types.KindClusterAuthPreference, services.RO()),
 						types.NewRule(types.KindRole, services.RO()),
 						types.NewRule(types.KindLock, services.RO()),
+						{
+							Resources: []string{types.KindPlugin},
+							Verbs:     []string{types.VerbRead},
+							Where: builder.Equals(
+								builder.Identifier(`resource.metadata.labels["type"]`),
+								builder.String("okta"),
+							).String(),
+						},
 					},
 				},
 			})

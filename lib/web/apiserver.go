@@ -4025,6 +4025,8 @@ func (h *Handler) WithUnauthenticatedHighLimiter(fn httplib.HandlerFunc) httprou
 
 func (h *Handler) unauthenticatedLimiterFunc(fn httplib.HandlerFunc, rateFunc func(fn httplib.HandlerFunc) httplib.HandlerFunc) httprouter.Handle {
 	return httplib.MakeHandler(func(w http.ResponseWriter, r *http.Request, p httprouter.Params) (interface{}, error) {
+		h.log.Debug(">>> unauthenticatedLimiterFunc().func")
+		defer h.log.Debug("<<< unauthenticatedLimiterFunc().func")
 		if _, _, err := h.authenticateRequestWithCluster(w, r, p); err != nil {
 			// retry with user auth
 			if _, err = h.AuthenticateRequest(w, r, true /* check token */); err != nil {
@@ -4032,6 +4034,8 @@ func (h *Handler) unauthenticatedLimiterFunc(fn httplib.HandlerFunc, rateFunc fu
 				return rateFunc(fn)(w, r, p)
 			}
 		}
+
+		h.log.Debug("Calling handler")
 		// auth passed, call directly
 		return fn(w, r, p)
 	})
@@ -4097,20 +4101,28 @@ func rateLimitRequest(r *http.Request, limiter *limiter.RateLimiter) error {
 // and bearer token
 func (h *Handler) AuthenticateRequest(w http.ResponseWriter, r *http.Request, checkBearerToken bool) (*SessionContext, error) {
 	const missingCookieMsg = "missing session cookie"
+
+	h.log.Debug("Extracting cookie")
 	cookie, err := r.Cookie(websession.CookieName)
 	if err != nil || (cookie != nil && cookie.Value == "") {
+		h.log.Debug("No cookie for you. Access denied.")
 		return nil, trace.AccessDenied(missingCookieMsg)
 	}
+
+	h.log.Debug("Decoding cookie")
 	decodedCookie, err := websession.DecodeCookie(cookie.Value)
 	if err != nil {
 		return nil, trace.AccessDenied("failed to decode cookie")
 	}
+
+	h.log.Debugf("Fetching/creating session for User: %q ...", decodedCookie.User)
 	sctx, err := h.auth.getOrCreateSession(r.Context(), decodedCookie.User, decodedCookie.SID)
 	if err != nil {
 		websession.ClearCookie(w)
 		return nil, trace.AccessDenied("need auth")
 	}
 	if checkBearerToken {
+		h.log.Debug("Checking bearer token")
 		creds, err := roundtrip.ParseAuthHeaders(r)
 		if err != nil {
 			return nil, trace.AccessDenied("need auth")
