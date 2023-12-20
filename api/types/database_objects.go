@@ -140,3 +140,20 @@ func (d *DatabaseObjectImportRuleV1) DatabaseLabels() map[string]string {
 }
 
 type DatabasePermissions []DatabasePermission
+
+func (m *DatabasePermission) CheckAndSetDefaults() error {
+	if len(m.Permissions) == 0 {
+		return trace.BadParameter("database permission list cannot be empty")
+	}
+	for _, permission := range m.Permissions {
+		if permission == "" {
+			return trace.BadParameter("individual database permissions cannot be empty strings")
+		}
+	}
+	for key, val := range m.Match {
+		if key == Wildcard && !(len(val) == 1 && val[0] == Wildcard) {
+			return trace.BadParameter("database permission: selector *:<val> is not supported")
+		}
+	}
+	return nil
+}

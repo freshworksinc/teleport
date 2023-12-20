@@ -3169,19 +3169,33 @@ func (c *Client) GetDatabaseObjectsImportRules(context.Context) ([]types.Databas
 				DatabaseLabels: map[string]string{},
 				Mappings: []types.DatabaseObjectImportRuleMapping{
 					{
-						ObjectMatches: nil,
+						Match: types.DatabaseObjectImportMatch{},
 						AddLabels: map[string]string{
 							"env": "prod",
 						},
 					},
 					{
-						ObjectMatches: []types.DatabaseObjectSpec{
-							{
-								Protocol: "postgres",
-							},
+						Match: types.DatabaseObjectImportMatch{
+							ProtocolNames: []string{"postgres"},
 						},
 						AddLabels: map[string]string{
 							"is_postgres": "true",
+						},
+					},
+					{
+						Match: types.DatabaseObjectImportMatch{
+							ObjectKinds: []string{"table"},
+						},
+						AddLabels: map[string]string{
+							"kind": "table",
+						},
+					},
+					{
+						Match: types.DatabaseObjectImportMatch{
+							Schemas: []string{"public"},
+						},
+						AddLabels: map[string]string{
+							"schema": "public",
 						},
 					},
 				},

@@ -1,24 +1,28 @@
-// Copyright 2023 Gravitational, Inc
+// Teleport
+// Copyright (C) 2023  Gravitational, Inc.
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package permissions
 
 import (
+	"regexp"
 	"sort"
 
 	"github.com/gravitational/teleport/api/types"
 	"github.com/gravitational/teleport/api/utils"
+	utils2 "github.com/gravitational/teleport/lib/utils"
 )
 
 // ApplyDatabaseObjectImportRules applies the given set of rules onto a set of objects coming from a same database.
@@ -53,10 +57,8 @@ func ApplyDatabaseObjectImportRules(rules []types.DatabaseObjectImportRule, data
 
 		// apply each mapping in order.
 		for _, mapping := range mappings {
-			// a mapping contains multiple matchers; an object must match at least one.
-			// if there are no matchers, the mapping will always match.
-			// the matching is applied to the object spec, so disregarding any labels on the object itself.
-			if utils.Any(mapping.ObjectMatches, matchDatabaseObjectSpec(obj.GetSpec())) {
+			// the matching is applied to the object spec; existing object labels does not matter
+			if databaseObjectImportMatch(mapping.Match, obj.GetSpec()) {
 				if objClone == nil {
 					objClone = obj.Copy()
 				}
@@ -81,61 +83,22 @@ func ApplyDatabaseObjectImportRules(rules []types.DatabaseObjectImportRule, data
 	return out
 }
 
-// matchDatabaseObjectSpec is a helper function to match object's spec with a matcher.
-// It returns a function suitable to be passed to utils.Any.
-func matchDatabaseObjectSpec(spec types.DatabaseObjectSpec) func(matcher types.DatabaseObjectSpec) bool {
-	mapping := databaseObjectSpecToMap(spec)
-	return func(matcher types.DatabaseObjectSpec) bool {
-		return matchLabels(mapping, databaseObjectSpecToMap(matcher))
-	}
+func matchPattern(pattern, value string) bool {
+	matched, _ := regexp.MatchString("^"+utils2.GlobToRegexp(pattern)+"$", value)
+	return matched
 }
 
-type allLabels struct {
-	types.ResourceWithLabels
-	resource map[string]string
-}
-
-func (a *allLabels) GetAllLabels() map[string]string { return a.resource }
-
-// matchLabels is a helper to pass a custom set of object labels to the types.MatchLabels function.
-func matchLabels(resource map[string]string, labels map[string]string) bool {
-	return types.MatchLabels(&allLabels{resource: resource}, labels)
-}
-
-// databaseObjectToMap combines object labels and attributes, with the latter having preference.
-func databaseObjectToMap(d types.DatabaseObject) map[string]string {
-	out := make(map[string]string)
-	for k, v := range d.GetAllLabels() {
-		if v != "" {
-			out[k] = v
-		}
-	}
-	for k, v := range databaseObjectSpecToMap(d.GetSpec()) {
-		out[k] = v
-	}
-	return out
-}
-
-// databaseObjectSpecToMap summarizes object attributes. Only non-empty values are returned.
-func databaseObjectSpecToMap(d types.DatabaseObjectSpec) map[string]string {
-	m := make(map[string]string)
-	add := func(key, val string) {
-		if val != "" {
-			m[key] = val
-		}
+func databaseObjectImportMatch(match types.DatabaseObjectImportMatch, spec types.DatabaseObjectSpec) bool {
+	matchAny := func(patterns []string, value string) bool {
+		return utils.Any(patterns, func(pattern string) bool {
+			return matchPattern(pattern, value)
+		})
 	}
 
-	for key, val := range d.Attributes {
-		add(key, val)
-	}
-
-	// standard attributes have higher priority, so are added last.
-	add("name", d.Name)
-	add("schema", d.Schema)
-	add("database", d.Database)
-	add("service_name", d.ServiceName)
-	add("protocol", d.Protocol)
-	add("object_kind", d.ObjectKind)
-
-	return m
+	return matchAny(match.Databases, spec.Database) &&
+		matchAny(match.DatabaseServiceNames, spec.DatabaseServiceName) &&
+		matchAny(match.ProtocolNames, spec.Protocol) &&
+		matchAny(match.ObjectKinds, spec.ObjectKind) &&
+		matchAny(match.Names, spec.Name) &&
+		matchAny(match.Schemas, spec.Schema)
 }

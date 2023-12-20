@@ -62,12 +62,12 @@ func FetchDatabaseObjects(ctx context.Context, session *common.Session, conn *pg
 					Metadata: types.Metadata{Name: name},
 				},
 				Spec: types.DatabaseObjectSpec{
-					ObjectKind:  ObjectKindTable,
-					ServiceName: session.Database.GetName(),
-					Protocol:    session.Database.GetProtocol(),
-					Database:    session.DatabaseName,
-					Schema:      schemaName,
-					Name:        table,
+					ObjectKind:          ObjectKindTable,
+					DatabaseServiceName: session.Database.GetName(),
+					Protocol:            session.Database.GetProtocol(),
+					Database:            session.DatabaseName,
+					Schema:              schemaName,
+					Name:                table,
 				},
 			}
 

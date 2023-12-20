@@ -158,13 +158,23 @@ func (e *Engine) applyPermissions(ctx context.Context, sessionCtx *common.Sessio
 	if err != nil {
 		return trace.Wrap(err)
 	}
+	e.Log.Infof("Fetched %v objects from the database.", len(objsFetched))
 
 	objsTagged := permissions.ApplyDatabaseObjectImportRules(rules, sessionCtx.Database, objsFetched)
+	e.Log.Infof("Tagged %v database objects.", len(objsTagged))
+
+	// TODO (Tener): store the database objects in backend here.
+
+	if len(sessionCtx.DatabaseRoles) > 0 {
+		e.Log.Infof("Skipping applying fine-grained permissions: non-empty list of database roles (%v).", sessionCtx.DatabaseRoles)
+	}
 
 	perms, err := permissions.CalculatePermissions(sessionCtx.Checker, objsTagged)
 	if err != nil {
 		return trace.Wrap(err)
 	}
+
+	e.Log.Infof("Applying database permissions for user %q: %v.", sessionCtx.DatabaseUser, permissions.SummarizePermissions(perms))
 
 	stPerms, err := convertPermissions(perms)
 	if err != nil {

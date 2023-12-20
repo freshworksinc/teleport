@@ -2959,12 +2959,15 @@ message RoleConditions {
 
 // DatabasePermission specifies the database object permission for the user.
 message DatabasePermission {
-  // ObjectKind is the database object kind: table, schema, etc.
-  string ObjectKind = 1 [(gogoproto.jsontag) = "object_kind"];
-  // Permission is the string representation of the permission to be given, e.g. SELECT, INSERT, UPDATE, ...
-  string Permission = 2 [(gogoproto.jsontag) = "permission"];
-  // Match is a list of labels (key, value) to match against database object properties.
-  map<string, string> Match = 3 [(gogoproto.jsontag) = "match,omitempty"];
+  // Permission is the list of string representations of the permission to be given, e.g. SELECT, INSERT, UPDATE, ...
+  repeated string Permissions = 1 [(gogoproto.jsontag) = "permissions"];
+
+  // Match is a list of object labels that must be matched for the permission to hold.
+  wrappers.LabelValues Match = 2 [
+    (gogoproto.nullable) = false,
+    (gogoproto.jsontag) = "match,omitempty",
+    (gogoproto.customtype) = "Labels"
+  ];
 }
 
 // DatabaseObjectV1 is a resource representing a database object.
@@ -2987,13 +2990,11 @@ message DatabaseObjectV1 {
 // DatabaseObjectSpec is the spec for the database object.
 message DatabaseObjectSpec {
   string Protocol = 1 [(gogoproto.jsontag) = "protocol,omitempty"];
-  string ServiceName = 2 [(gogoproto.jsontag) = "service_name,omitempty"];
-  string ObjectKind = 3 [(gogoproto.jsontag) = "object_kind"];
+  string DatabaseServiceName = 2 [(gogoproto.jsontag) = "db_service_name,omitempty"];
+  string ObjectKind = 3 [(gogoproto.jsontag) = "object_kind,omitempty"];
   string Database = 4 [(gogoproto.jsontag) = "database,omitempty"];
   string Schema = 5 [(gogoproto.jsontag) = "schema,omitempty"];
   string Name = 6 [(gogoproto.jsontag) = "name,omitempty"];
-  // extra attributes for matching
-  map<string, string> Attributes = 7 [(gogoproto.jsontag) = "attributes,omitempty"];
 }
 
 // DatabaseObjectImportRuleV1 is the resource representing a global database object import rule.
@@ -3015,10 +3016,10 @@ message DatabaseObjectImportRuleV1 {
 
 // DatabaseObjectImportRuleSpec is the spec for database object import rule.
 message DatabaseObjectImportRuleSpec {
-  // Priority represents the priority of the rule application. Lower numbered rules will be applied first.
+  // Priority represents the priority of the rule application. Rules with higher priorities override those with lower.
   int32 Priority = 1 [(gogoproto.jsontag) = "priority"];
 
-  // DatabaseLabels is a set of labels which must match the database for the rule to be applied.
+  // DatabaseLabels is a set of labels matched against database labels.
   map<string, string> DatabaseLabels = 2 [(gogoproto.jsontag) = "db_labels,omitempty"];
 
   // Mappings is a list of matches that will map match conditions to labels.
@@ -3030,16 +3031,24 @@ message DatabaseObjectImportRuleSpec {
 
 // DatabaseObjectImportRuleMapping is the mapping between object properties and labels that will be added to the object.
 message DatabaseObjectImportRuleMapping {
-  // ObjectMatches is a set of object matching rules for this mapping.
-  // For a given database object, each of the matches is attempted.
-  // If any of them succeed, the labels are applied.
-  repeated DatabaseObjectSpec ObjectMatches = 2 [
+  // Match specifies the matching rules.
+  DatabaseObjectImportMatch Match = 2 [
     (gogoproto.nullable) = false,
-    (gogoproto.jsontag) = "object_match"
+    (gogoproto.jsontag) = "match,omitempty"
   ];
 
-  // AddLabels specifies which labels to add if any of the previous matches match.
+  // AddLabels specifies which labels to add if the match succeeds.
   map<string, string> AddLabels = 3 [(gogoproto.jsontag) = "add_labels"];
+}
+
+// DatabaseObjectMatch defines rules for matching an object. If a given clause is non-empty, the object must match it. Each field corresponds to one in DatabaseObjectSpec type.
+message DatabaseObjectImportMatch {
+  repeated string ProtocolNames = 1 [(gogoproto.jsontag) = "protocol_names,omitempty"];
+  repeated string DatabaseServiceNames = 2 [(gogoproto.jsontag) = "db_service_names,omitempty"];
+  repeated string ObjectKinds = 3 [(gogoproto.jsontag) = "object_kinds,omitempty"];
+  repeated string Databases = 4 [(gogoproto.jsontag) = "databases,omitempty"];
+  repeated string Schemas = 5 [(gogoproto.jsontag) = "schemas,omitempty"];
+  repeated string Names = 6 [(gogoproto.jsontag) = "names,omitempty"];
 }
 
 // KubernetesResource is the Kubernetes resource identifier.
