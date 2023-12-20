@@ -96,6 +96,21 @@ func isHighVolumeResource(kind string) bool {
 	return ok
 }
 
+// makeAllKnownCAsFilter makes a filter that matches all known CA types.
+// This should be installed by default on every CA watcher, unless a filter is
+// otherwise specified, to avoid complicated server-side hacks if/when we add
+// a new CA type.
+// This is different from a nil/empty filter in that all the CA types that the
+// client knows about will be returned rather than all the CA types that the
+// server knows about.
+func makeAllKnownCAsFilter() types.CertAuthorityFilter {
+	filter := make(types.CertAuthorityFilter, len(types.CertAuthTypes))
+	for _, t := range types.CertAuthTypes {
+		filter[t] = types.Wildcard
+	}
+	return filter
+}
+
 // ForAuth sets up watch configuration for the auth server
 func ForAuth(cfg Config) Config {
 	cfg.target = "auth"
@@ -778,6 +793,11 @@ func (c *Config) CheckAndSetDefaults() error {
 	}
 	if c.FanoutShards == 0 {
 		c.FanoutShards = 1
+	}
+	for i := range c.Watches {
+		if c.Watches[i].Kind == types.KindCertAuthority && len(c.Watches[i].Filter) == 0 {
+			c.Watches[i].Filter = makeAllKnownCAsFilter().IntoMap()
+		}
 	}
 	return nil
 }

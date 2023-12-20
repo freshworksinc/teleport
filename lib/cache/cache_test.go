@@ -3306,3 +3306,18 @@ const testEntityDescriptor = `<?xml version="1.0" encoding="UTF-8"?>
    </md:SPSSODescriptor>
 </md:EntityDescriptor>
 `
+
+func TestDefaultCAFiltering(t *testing.T) {
+	t.Parallel()
+	p := newPackForProxy(t)
+	t.Cleanup(p.Close)
+	var found int
+	for _, w := range p.cache.Config.Watches {
+		if w.Kind == types.KindCertAuthority {
+			require.Len(t, w.Filter, len(types.CertAuthTypes))
+			require.Equal(t, makeAllKnownCAsFilter().IntoMap(), w.Filter)
+			found++
+		}
+	}
+	require.Equal(t, found, 1)
+}
