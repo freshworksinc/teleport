@@ -1455,6 +1455,9 @@ func (cfg *CertAuthorityWatcherConfig) CheckAndSetDefaults() error {
 		}
 		cfg.AuthorityGetter = getter
 	}
+	if len(cfg.Types) == 0 {
+		return trace.BadParameter("missing parameter Types")
+	}
 	return nil
 }
 
