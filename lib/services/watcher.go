@@ -1623,12 +1623,9 @@ func (c *caCollector) processEventAndUpdateCurrent(ctx context.Context, event ty
 }
 
 func (c *caCollector) watchingType(t types.CertAuthType) bool {
-	for _, caType := range c.Types {
-		if caType == t {
-			return true
-		}
+	if _, ok := c.cas[t]; ok {
+		return true
 	}
-
 	return false
 }
 
