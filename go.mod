@@ -63,6 +63,7 @@ require (
 	github.com/charmbracelet/bubbles v0.17.1
 	github.com/charmbracelet/bubbletea v0.25.0
 	github.com/charmbracelet/lipgloss v0.9.1
+	github.com/cilium/ebpf v0.12.3
 	github.com/coreos/go-oidc v2.2.1+incompatible // replaced
 	github.com/coreos/go-semver v0.3.1
 	github.com/creack/pty v1.1.21
@@ -215,11 +216,6 @@ require (
 require (
 	github.com/mailgun/metrics v0.0.0-20150124003306-2b3c4565aafd // indirect
 	github.com/mailgun/minheap v0.0.0-20170619185613-3dbe6c6bf55f // indirect
-)
-
-require (
-	github.com/aquasecurity/libbpfgo v0.1.1
-	github.com/cilium/ebpf v0.12.3
 )
 
 require (
