@@ -2255,9 +2255,11 @@ func downgradeRoleToV6(r *types.RoleV6) (*types.RoleV6, bool, error) {
 	}
 }
 
-var minSupportedInsecureDropMode12 = semver.Version{Major: 12, Minor: 4, Patch: 30}
-var minSupportedInsecureDropMode13 = semver.Version{Major: 13, Minor: 4, Patch: 11}
-var minSupportedInsecureDropMode14 = semver.Version{Major: 14, Minor: 2, Patch: 2}
+var minSupportedInsecureDropModeVersions = map[int64]semver.Version{
+	12: {Major: 12, Minor: 4, Patch: 30},
+	13: {Major: 13, Minor: 4, Patch: 11},
+	14: {Major: 14, Minor: 2, Patch: 2},
+}
 
 // maybeDowngradeRoleHostUserCreationMode tests the client version passed through the gRPC metadata, and
 // if the client version is less than the minimum supported version for the insecure-drop
@@ -2268,9 +2270,10 @@ func maybeDowngradeRoleHostUserCreationMode(role *types.RoleV6, clientVersion *s
 	if role.GetOptions().CreateHostUserMode != types.CreateHostUserMode_HOST_USER_MODE_INSECURE_DROP {
 		return role
 	}
-	if (clientVersion.Major == 12 && !clientVersion.LessThan(minSupportedInsecureDropMode12)) ||
-		(clientVersion.Major == 13 && !clientVersion.LessThan(minSupportedInsecureDropMode13)) ||
-		(clientVersion.Major == 14 && !clientVersion.LessThan(minSupportedInsecureDropMode14)) {
+	minSupportedVersion, ok := minSupportedInsecureDropModeVersions[clientVersion.Major]
+	// Check if insecure-drop is supported. insecure-drop is not supported below
+	// v12, supported for some versions of v12 through v14, and supported for v15+.
+	if clientVersion.Major >= 12 && (!ok || !clientVersion.LessThan(minSupportedVersion)) {
 		return role
 	}
 
@@ -2283,6 +2286,15 @@ func maybeDowngradeRoleHostUserCreationMode(role *types.RoleV6, clientVersion *s
 	options := role.GetOptions()
 	options.CreateHostUserMode = types.CreateHostUserMode_HOST_USER_MODE_DROP
 	role.SetOptions(options)
+
+	reason := fmt.Sprintf(`Client version %q does not support the host creation user mode `+
+		`'insecure-drop'. Role %q will be downgraded to use 'drop' mode instead. `+
+		`In order to support 'insecure-drop', all clients must be updated to version %q or higher.`,
+		clientVersion, role.GetName(), minSupportedVersion)
+	if role.Metadata.Labels == nil {
+		role.Metadata.Labels = make(map[string]string, 1)
+	}
+	role.Metadata.Labels[types.TeleportDowngradedLabel] = reason
 	return role
 }
 

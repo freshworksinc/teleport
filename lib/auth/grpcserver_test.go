@@ -4028,6 +4028,9 @@ func TestRoleVersions(t *testing.T) {
 				},
 			},
 		},
+		Options: types.RoleOptions{
+			CreateHostUserMode: types.CreateHostUserMode_HOST_USER_MODE_INSECURE_DROP,
+		},
 	})
 
 	roleV7Wildcard := newRole("test_role_2", types.V7, types.RoleSpecV6{
@@ -4081,7 +4084,7 @@ func TestRoleVersions(t *testing.T) {
 		{
 			desc: "up to date",
 			clientVersions: []string{
-				"14.0.0-alpha.1", "15.1.2", api.Version, "",
+				"15.1.2", api.Version, "",
 			},
 			inputRole:    role,
 			expectedRole: role,
@@ -4121,7 +4124,51 @@ func TestRoleVersions(t *testing.T) {
 			expectDowngraded: true,
 		},
 		{
-			desc: "downgrade role to v6 but supports label expressions",
+			desc: "downgrade host user creation mode only",
+			clientVersions: []string{
+				"14.0.0-alpha.1",
+			},
+			inputRole: role,
+			expectedRole: newRole(role.GetName(), types.V7, types.RoleSpecV6{
+				Allow: types.RoleConditions{
+					NodeLabels:               wildcardLabels,
+					AppLabels:                wildcardLabels,
+					AppLabelsExpression:      `labels["env"] == "staging"`,
+					DatabaseLabelsExpression: `labels["env"] == "staging"`,
+					Rules: []types.Rule{
+						types.NewRule(types.KindRole, services.RW()),
+					},
+					KubernetesLabels: wildcardLabels,
+					KubernetesResources: []types.KubernetesResource{
+						{
+							Kind:      types.Wildcard,
+							Namespace: types.Wildcard,
+							Name:      types.Wildcard,
+							Verbs:     []string{types.VerbList},
+						},
+					},
+				},
+				Deny: types.RoleConditions{
+					KubernetesLabels:               types.Labels{"env": {"prod"}},
+					ClusterLabels:                  types.Labels{"env": {"prod"}},
+					ClusterLabelsExpression:        `labels["env"] == "prod"`,
+					WindowsDesktopLabelsExpression: `labels["env"] == "prod"`,
+					KubernetesResources: []types.KubernetesResource{
+						{
+							Kind:      types.Wildcard,
+							Namespace: types.Wildcard,
+							Name:      types.Wildcard,
+						},
+					},
+				},
+				Options: types.RoleOptions{
+					CreateHostUserMode: types.CreateHostUserMode_HOST_USER_MODE_DROP,
+				},
+			}),
+			expectDowngraded: true,
+		},
+		{
+			desc: "downgrade role to v6 and host user creation mode but supports label expressions",
 			clientVersions: []string{
 				minSupportedLabelExpressionVersion.String(), "13.3.0",
 			},
@@ -4141,6 +4188,9 @@ func TestRoleVersions(t *testing.T) {
 					ClusterLabels:                  types.Labels{"env": {"prod"}},
 					ClusterLabelsExpression:        `labels["env"] == "prod"`,
 					WindowsDesktopLabelsExpression: `labels["env"] == "prod"`,
+				},
+				Options: types.RoleOptions{
+					CreateHostUserMode: types.CreateHostUserMode_HOST_USER_MODE_DROP,
 				},
 			}),
 			expectDowngraded: true,
@@ -4180,6 +4230,9 @@ func TestRoleVersions(t *testing.T) {
 						DatabaseLabels:       wildcardLabels,
 						ClusterLabels:        wildcardLabels,
 						WindowsDesktopLabels: wildcardLabels,
+					},
+					Options: types.RoleOptions{
+						CreateHostUserMode: types.CreateHostUserMode_HOST_USER_MODE_DROP,
 					},
 				}),
 			expectDowngraded: true,
