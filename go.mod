@@ -35,7 +35,6 @@ require (
 	github.com/alecthomas/kingpin/v2 v2.3.2 // replaced
 	github.com/alicebob/miniredis/v2 v2.31.0
 	github.com/andybalholm/brotli v1.0.6
-	github.com/aquasecurity/libbpfgo v0.5.1-libbpf-1.2
 	github.com/armon/go-radix v1.0.0
 	github.com/aws/aws-sdk-go v1.49.13
 	github.com/aws/aws-sdk-go-v2 v1.24.0
@@ -219,6 +218,11 @@ require (
 )
 
 require (
+	github.com/aquasecurity/libbpfgo v0.1.1
+	github.com/cilium/ebpf v0.12.3
+)
+
+require (
 	cloud.google.com/go v0.110.10 // indirect
 	cloud.google.com/go/longrunning v0.5.4 // indirect
 	cloud.google.com/go/pubsub v1.33.0 // indirect
@@ -258,7 +262,6 @@ require (
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chai2010/gettext-go v1.0.2 // indirect
-	github.com/cilium/ebpf v0.12.3 // indirect
 	github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
