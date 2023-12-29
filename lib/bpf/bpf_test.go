@@ -386,15 +386,15 @@ func TestRootPrograms(t *testing.T) {
 	tests := []struct {
 		inName    string
 		inEventCh <-chan []byte
-		genEvents func(t *testing.T, ctx context.Context)
+		genEvents func(t *testing.T)
 		verifyFn  func(event []byte) bool
 	}{
 		// Run execsnoop with "ls".
 		{
 			inName:    "execsnoop",
 			inEventCh: execsnoop.events(),
-			genEvents: func(t *testing.T, ctx context.Context) {
-				executeCommand(t, ctx, "ls", execsnoop)
+			genEvents: func(t *testing.T) {
+				executeCommand(t, "ls", execsnoop)
 			},
 			verifyFn: func(event []byte) bool {
 				var e rawExecEvent
@@ -407,8 +407,8 @@ func TestRootPrograms(t *testing.T) {
 		{
 			inName:    "opensnoop",
 			inEventCh: opensnoop.events(),
-			genEvents: func(t *testing.T, ctx context.Context) {
-				executeCommand(t, ctx, "ls", opensnoop)
+			genEvents: func(t *testing.T) {
+				executeCommand(t, "ls", opensnoop)
 			},
 			verifyFn: func(event []byte) bool {
 				var e rawOpenEvent
@@ -420,8 +420,8 @@ func TestRootPrograms(t *testing.T) {
 		{
 			inName:    "tcpconnect",
 			inEventCh: tcpconnect.v4Events(),
-			genEvents: func(t *testing.T, ctx context.Context) {
-				executeHTTP(t, ctx, ts.URL, tcpconnect)
+			genEvents: func(t *testing.T) {
+				executeHTTP(t, ts.URL, tcpconnect)
 			},
 			verifyFn: func(event []byte) bool {
 				var e rawConn4Event
@@ -431,7 +431,7 @@ func TestRootPrograms(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		// Create a context that will be used to signal that an event has been recieved.
+		// Create a context that will be used to signal that an event has been received.
 		doneContext, doneFunc := context.WithCancel(context.Background())
 
 		// Start two goroutines. The first will wait for the BPF program event to
@@ -440,7 +440,7 @@ func TestRootPrograms(t *testing.T) {
 		// trigger an event.
 		go waitForEvent(doneContext, doneFunc, tt.inEventCh, tt.verifyFn)
 
-		go tt.genEvents(t, doneContext)
+		go tt.genEvents(t)
 
 		// Wait for an event to arrive from execsnoop. If an event does not arrive
 		// within 10 seconds, timeout.
@@ -588,31 +588,18 @@ func createCgroup(t *testing.T, cgroup *cgroup.Service, sessionID string,
 }
 
 // executeCommand will execute some command in a loop.
-func executeCommand(t *testing.T, doneContext context.Context, file string,
-	traceCgroup cgroupRegister,
-) {
+func executeCommand(t *testing.T, file string, traceCgroup cgroupRegister) {
 	t.Helper()
 
-	ticker := time.NewTicker(250 * time.Millisecond)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			// Lookup and run the requested command.
-			path, err := osexec.LookPath(file)
-			if err != nil {
-				t.Logf("Failed to find executable %q: %v.", file, err)
-			}
-
-			fullPath, err := osexec.LookPath(path)
-			require.NoError(t, err)
-
-			runCmd(t, reexecInCGroupCmd, fullPath, traceCgroup)
-		case <-doneContext.Done():
-			return
-		}
+	path, err := osexec.LookPath(file)
+	if err != nil {
+		t.Logf("Failed to find executable %q: %v.", file, err)
 	}
+
+	fullPath, err := osexec.LookPath(path)
+	require.NoError(t, err)
+
+	runCmd(t, reexecInCGroupCmd, fullPath, traceCgroup)
 }
 
 func runCmd(t *testing.T, reexecCmd string, arg string, traceCgroup cgroupRegister) {
@@ -656,27 +643,16 @@ func runCmd(t *testing.T, reexecCmd string, arg string, traceCgroup cgroupRegist
 	require.NoError(t, err)
 }
 
-// executeHTTP will perform a HTTP GET to some endpoint in a loop.
-func executeHTTP(t *testing.T, doneContext context.Context, endpoint string, traceCgroup cgroupRegister) {
+// executeHTTP will perform an HTTP GET to some endpoint in a loop.
+func executeHTTP(t *testing.T, endpoint string, traceCgroup cgroupRegister) {
 	t.Helper()
 
-	ticker := time.NewTicker(250 * time.Millisecond)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			// Perform HTTP GET to the requested endpoint.
-			if _, err := http.Get(endpoint); err != nil {
-				t.Logf("HTTP request failed: %v.", err)
-			}
-
-			runCmd(t, networkInCgroupCmd, endpoint, traceCgroup)
-
-		case <-doneContext.Done():
-			return
-		}
+	// Perform HTTP GET to the requested endpoint.
+	if _, err := http.Get(endpoint); err != nil {
+		t.Logf("HTTP request failed: %v.", err)
 	}
+
+	runCmd(t, networkInCgroupCmd, endpoint, traceCgroup)
 }
 
 // isRoot returns a boolean if the test is being run as root or not. Tests
