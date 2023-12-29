@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"path"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -1152,6 +1153,21 @@ func (r *RoleV6) CheckAndSetDefaults() error {
 		}
 		if err := r.Spec.Deny.Impersonate.CheckAndSetDefaults(); err != nil {
 			return trace.Wrap(err)
+		}
+	}
+
+	for _, labels := range []Labels{
+		r.Spec.Deny.NodeLabels,
+		r.Spec.Deny.AppLabels,
+		r.Spec.Deny.KubernetesLabels,
+		r.Spec.Deny.DatabaseLabels,
+		r.Spec.Deny.WindowsDesktopLabels,
+		r.Spec.Deny.GroupLabels,
+	} {
+		for label := range labels {
+			if strings.HasPrefix(label, TeleportDynamicLabelPrefix) {
+				return trace.BadParameter("labels with %q prefix are not allowed in deny rules", TeleportDynamicLabelPrefix)
+			}
 		}
 	}
 
