@@ -73,6 +73,7 @@ func NewUserReconciler(client kclient.Client, tClient *client.Client) *TeleportR
 	resourceReconciler := NewTeleportResourceReconciler[types.User, *resourcesv2.TeleportUser](
 		client,
 		userClient,
+		resourcesv2.GroupVersion,
 	)
 
 	return resourceReconciler

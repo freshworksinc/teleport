@@ -69,6 +69,7 @@ func NewLoginRuleReconciler(client kclient.Client, tClient *client.Client) *Tele
 	resourceReconciler := NewTeleportResourceReconciler[*resourcesv1.LoginRuleResource, *resourcesv1.TeleportLoginRule](
 		client,
 		loginRuleClient,
+		resourcesv1.GroupVersion,
 	)
 
 	return resourceReconciler

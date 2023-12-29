@@ -64,6 +64,7 @@ func NewProvisionTokenReconciler(client kclient.Client, tClient *client.Client) 
 	resourceReconciler := NewTeleportResourceReconciler[types.ProvisionToken, *resourcesv2.TeleportProvisionToken](
 		client,
 		tokenClient,
+		resourcesv2.GroupVersion,
 	)
 
 	return resourceReconciler

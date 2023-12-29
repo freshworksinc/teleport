@@ -71,6 +71,7 @@ func NewAccessListReconciler(client kclient.Client, tClient *client.Client) *Tel
 	resourceReconciler := NewTeleportResourceReconciler[*accesslist.AccessList, *resourcesv1.TeleportAccessList](
 		client,
 		accessListClient,
+		resourcesv1.GroupVersion,
 	)
 
 	return resourceReconciler

@@ -66,6 +66,7 @@ func NewSAMLConnectorReconciler(client kclient.Client, tClient *client.Client) *
 	resourceReconciler := NewTeleportResourceReconciler[types.SAMLConnector, *resourcesv2.TeleportSAMLConnector](
 		client,
 		samlClient,
+		resourcesv2.GroupVersion,
 	)
 
 	return resourceReconciler

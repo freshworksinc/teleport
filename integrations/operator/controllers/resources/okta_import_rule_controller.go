@@ -66,6 +66,7 @@ func NewOktaImportRuleReconciler(client kclient.Client, tClient *client.Client) 
 	resourceReconciler := NewTeleportResourceReconciler[types.OktaImportRule, *resourcesv1.TeleportOktaImportRule](
 		client,
 		oktaImportRuleClient,
+		resourcesv1.GroupVersion,
 	)
 
 	return resourceReconciler

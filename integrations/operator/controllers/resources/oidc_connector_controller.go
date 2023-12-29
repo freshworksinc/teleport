@@ -66,6 +66,7 @@ func NewOIDCConnectorReconciler(client kclient.Client, tClient *client.Client) *
 	resourceReconciler := NewTeleportResourceReconciler[types.OIDCConnector, *resourcesv3.TeleportOIDCConnector](
 		client,
 		oidcClient,
+		resourcesv3.GroupVersion,
 	)
 
 	return resourceReconciler

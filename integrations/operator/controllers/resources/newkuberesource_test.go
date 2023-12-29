@@ -23,6 +23,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gravitational/teleport/api/types"
@@ -65,4 +66,20 @@ func TestNewKubeResource(t *testing.T) {
 	require.IsTypef(t, &FakeKubernetesResourcePtrReceiver{}, resourcePtr, "Should be a pointer on FakeKubernetesResourcePtrReceiver")
 	require.NotNil(t, resourcePtr)
 	require.NotNil(t, *resourcePtr)
+}
+
+func TestGetGVK(t *testing.T) {
+	gv := schema.GroupVersion{
+		Group:   "foo",
+		Version: "v1",
+	}
+	// Test with a value receiver
+	gvk := getGVK[FakeResourceWithOrigin, FakeKubernetesResource](gv)
+	require.Equal(t, gv, gvk.GroupVersion())
+	require.Equal(t, "FakeKubernetesResource", gvk.Kind)
+
+	// Test with a pointer receiver
+	gvk = getGVK[FakeResourceWithOrigin, *FakeKubernetesResourcePtrReceiver](gv)
+	require.Equal(t, gv, gvk.GroupVersion())
+	require.Equal(t, "FakeKubernetesResourcePtrReceiver", gvk.Kind)
 }

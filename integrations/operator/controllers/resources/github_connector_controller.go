@@ -66,6 +66,7 @@ func NewGithubConnectorReconciler(client kclient.Client, tClient *client.Client)
 	resourceReconciler := NewTeleportResourceReconciler[types.GithubConnector, *resourcesv3.TeleportGithubConnector](
 		client,
 		githubClient,
+		resourcesv3.GroupVersion,
 	)
 
 	return resourceReconciler

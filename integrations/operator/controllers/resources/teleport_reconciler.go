@@ -20,11 +20,15 @@ package resources
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"slices"
 
 	"github.com/gravitational/trace"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
 	kclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -53,6 +57,7 @@ type TeleportKubernetesResource[T TeleportResource] interface {
 type TeleportResourceReconciler[T TeleportResource, K TeleportKubernetesResource[T]] struct {
 	ResourceBaseReconciler
 	resourceClient TeleportResourceClient[T]
+	gvk            schema.GroupVersionKind
 }
 
 // TeleportResourceClient is a CRUD client for a specific Teleport resource.
@@ -82,28 +87,52 @@ type TeleportExistingResourceMutator[T TeleportResource] interface {
 func NewTeleportResourceReconciler[T TeleportResource, K TeleportKubernetesResource[T]](
 	client kclient.Client,
 	resourceClient TeleportResourceClient[T],
+	gv schema.GroupVersion,
 ) *TeleportResourceReconciler[T, K] {
+	// We compute and store the GVK watched by this reconciler.
+	// This GVK is used to create unstructured objects to unmarshall the CRs
+	// and to tell the manager which GVK the reconciler should watch.
+	gvk := getGVK[T, K](gv)
+
 	reconciler := &TeleportResourceReconciler[T, K]{
 		ResourceBaseReconciler: ResourceBaseReconciler{Client: client},
 		resourceClient:         resourceClient,
+		gvk:                    gvk,
 	}
 	reconciler.ResourceBaseReconciler.UpsertExternal = reconciler.Upsert
 	reconciler.ResourceBaseReconciler.DeleteExternal = reconciler.Delete
 	return reconciler
 }
 
-// Upsert is the TeleportResourceReconciler of the ResourceBaseReconciler UpsertExertal
+// Upsert is the TeleportResourceReconciler of the ResourceBaseReconciler UpsertExternal
 // It contains the logic to check if the resource already exists, if it is owned by the operator and what
 // to do to reconcile the Teleport resource based on the Kubernetes one.
 func (r TeleportResourceReconciler[T, K]) Upsert(ctx context.Context, obj kclient.Object) error {
-	k8sResource, ok := obj.(K)
+	u, ok := obj.(*unstructured.Unstructured)
 	if !ok {
-		return trace.BadParameter("failed to convert Object into resource object: %T", obj)
+		return fmt.Errorf("failed to convert Object into resource object: %T", obj)
 	}
+	k8sResource := newKubeResource[T, K]()
+
+	// If an error happens we want to put it in status.conditions before returning.
+	err := runtime.DefaultUnstructuredConverter.FromUnstructuredWithValidation(
+		u.Object,
+		k8sResource, true, /* returnUnknownFields */
+	)
+	updateErr := updateStatus(updateStatusConfig{
+		ctx:         ctx,
+		client:      r.Client,
+		k8sResource: k8sResource,
+		condition:   getStructureConditionFromError(err),
+	})
+	if err != nil || updateErr != nil {
+		return trace.NewAggregate(err, updateErr)
+	}
+
 	teleportResource := k8sResource.ToTeleport()
 
 	existingResource, err := r.resourceClient.Get(ctx, teleportResource.GetName())
-	updateErr := updateStatus(updateStatusConfig{
+	updateErr = updateStatus(updateStatusConfig{
 		ctx:         ctx,
 		client:      r.Client,
 		k8sResource: k8sResource,
@@ -176,16 +205,16 @@ func (r TeleportResourceReconciler[T, K]) Delete(ctx context.Context, obj kclien
 
 // Reconcile allows the TeleportResourceReconciler to implement the reconcile.Reconciler interface
 func (r TeleportResourceReconciler[T, K]) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	kubeResource := newKubeResource[T, K]()
-	return r.Do(ctx, req, kubeResource)
+	obj := GetUnstructuredObjectFromGVK(r.gvk)
+	return r.Do(ctx, req, obj)
 }
 
 // SetupWithManager have a controllerruntime.Manager run the TeleportResourceReconciler
 func (r TeleportResourceReconciler[T, K]) SetupWithManager(mgr ctrl.Manager) error {
-	kubeResource := newKubeResource[T, K]()
+	obj := GetUnstructuredObjectFromGVK(r.gvk)
 	return ctrl.
 		NewControllerManagedBy(mgr).
-		For(kubeResource).
+		For(obj).
 		WithEventFilter(
 			buildPredicate(),
 		).
@@ -208,6 +237,18 @@ func newKubeResource[T TeleportResource, K TeleportKubernetesResource[T]]() K {
 		resource = initializedResource.Interface().(K)
 	}
 	return resource
+}
+
+// getGVK returns the GVK for the kind K in the chosen GroupVersion. This helper is used to avoid hardcoding GVKs in
+// every reconciler. The kind is dynamically retrieved by looking up the golang type name, like the controller-runtime
+// scheme builder does.
+func getGVK[T TeleportResource, K TeleportKubernetesResource[T]](gv schema.GroupVersion) schema.GroupVersionKind {
+	resource := newKubeResource[T, K]()
+	t := reflect.TypeOf(resource)
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+	return gv.WithKind(t.Name())
 }
 
 // buildPredicate returns a predicate that triggers the reconciliation when:
