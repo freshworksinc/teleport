@@ -1471,11 +1471,13 @@ func NewCertAuthorityWatcher(ctx context.Context, cfg CertAuthorityWatcherConfig
 		CertAuthorityWatcherConfig: cfg,
 		fanout:                     NewFanout(),
 		cas:                        make(map[types.CertAuthType]map[string]types.CertAuthority, len(cfg.Types)),
+		filter:                     make(types.CertAuthorityFilter, len(cfg.Types)),
 		initializationC:            make(chan struct{}),
 	}
 
 	for _, t := range cfg.Types {
 		collector.cas[t] = make(map[string]types.CertAuthority)
+		collector.filter[t] = types.Wildcard
 	}
 	// Resource watcher require the fanout to be initialized before passing in.
 	// Otherwise, Emit() may fail due to a race condition mentioned in https://github.com/gravitational/teleport/issues/19289
@@ -1506,10 +1508,14 @@ type caCollector struct {
 	// initializationC is used to check whether the initial sync has completed
 	initializationC chan struct{}
 	once            sync.Once
+	filter          types.CertAuthorityFilter
 }
 
 // Subscribe is used to subscribe to the lock updates.
 func (c *caCollector) Subscribe(ctx context.Context, filter types.CertAuthorityFilter) (types.Watcher, error) {
+	if len(filter) == 0 {
+		filter = c.filter
+	}
 	watch := types.Watch{
 		Kinds: []types.WatchKind{
 			{
@@ -1535,7 +1541,7 @@ func (c *caCollector) Subscribe(ctx context.Context, filter types.CertAuthorityF
 
 // resourceKinds specifies the resource kind to watch.
 func (c *caCollector) resourceKinds() []types.WatchKind {
-	return []types.WatchKind{{Kind: types.KindCertAuthority}}
+	return []types.WatchKind{{Kind: types.KindCertAuthority, Filter: c.filter.IntoMap()}}
 }
 
 // isInitialized is used to check that the cache has done its initial
