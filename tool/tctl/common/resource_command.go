@@ -437,6 +437,9 @@ func (rc *ResourceCommand) createRole(ctx context.Context, client auth.ClientI, 
 		// check for syntax errors in predicates
 		return trace.Wrap(err)
 	}
+	if err := services.CheckDynamicLabelsInDenyRules(role); err != nil {
+		return trace.Wrap(err)
+	}
 
 	warnAboutKubernetesResources(rc.config.Log, role)
 	roleName := role.GetName()
@@ -467,6 +470,7 @@ func (rc *ResourceCommand) updateRole(ctx context.Context, client auth.ClientI, 
 	}
 
 	warnAboutKubernetesResources(rc.config.Log, role)
+	warnAboutDynamicLabelsInDenyRule(rc.config.Log, role)
 
 	if _, err := client.UpdateRole(ctx, role); err != nil {
 		return trace.Wrap(err)
@@ -493,6 +497,17 @@ func warnAboutKubernetesResources(logger utils.Logger, r types.Role) {
 	if len(role.Spec.Deny.KubernetesLabels) > 0 && len(role.Spec.Deny.KubernetesResources) > 0 {
 		logger.Warningf("role %q has deny.kubernetes_labels set but also has deny.kubernetes_resources set, this is probably a mistake. deny.kubernetes_resources won't be effective.", role.Metadata.Name)
 	}
+}
+
+// warnAboutDynamicLabelsInDenyRule warns about using dynamic/ labels in deny
+// rules. Only applies to existing roles as adding dynamic/ labels to deny
+// rules in a new role is not allowed.
+func warnAboutDynamicLabelsInDenyRule(logger utils.Logger, r types.Role) {
+	if err := services.CheckDynamicLabelsInDenyRules(r); err == nil {
+		return
+	}
+	logger.Warningf("existing role %q has labels with the %q prefix in its deny rules. This is not recommended due to the volatitily of %q labels and is not allowed for new roles",
+		r.GetName(), types.TeleportDynamicLabelPrefix, types.TeleportDynamicLabelPrefix)
 }
 
 // createUser implements `tctl create user.yaml` command.
@@ -1797,6 +1812,7 @@ func (rc *ResourceCommand) getCollection(ctx context.Context, client auth.Client
 		if err != nil {
 			return nil, trace.Wrap(err)
 		}
+		warnAboutDynamicLabelsInDenyRule(rc.config.Log, role)
 		return &roleCollection{roles: []types.Role{role}}, nil
 	case types.KindNamespace:
 		if rc.ref.Name == "" {

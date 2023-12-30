@@ -20,8 +20,10 @@ package services
 
 import (
 	"context"
+	"strings"
 
 	"github.com/gravitational/teleport/api/types"
+	"github.com/gravitational/trace"
 )
 
 // LockGetter is a service that gets locks.
@@ -58,4 +60,25 @@ type Access interface {
 	DeleteAllLocks(context.Context) error
 	// ReplaceRemoteLocks replaces the set of locks associated with a remote cluster.
 	ReplaceRemoteLocks(ctx context.Context, clusterName string, locks []types.Lock) error
+}
+
+// CheckDynamicLabelsInDenyRules checks if any deny rules in the given role use
+// labels prefixed with "dynamic/".
+func CheckDynamicLabelsInDenyRules(r types.Role) error {
+	for _, labels := range []types.Labels{
+		r.GetNodeLabels(types.Deny),
+		r.GetAppLabels(types.Deny),
+		r.GetKubernetesLabels(types.Deny),
+		r.GetDatabaseLabels(types.Deny),
+		r.GetWindowsDesktopLabels(types.Deny),
+		r.GetGroupLabels(types.Deny),
+	} {
+		for label := range labels {
+			if strings.HasPrefix(label, types.TeleportDynamicLabelPrefix) {
+				return trace.BadParameter("labels with %q prefix are not allowed in deny rules", types.TeleportDynamicLabelPrefix)
+			}
+		}
+	}
+
+	return nil
 }
