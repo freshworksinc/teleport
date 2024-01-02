@@ -61,58 +61,230 @@ a demo cluster using:
 
 - (!docs/pages/includes/tctl.mdx!)
 
-## Step 1/4. Fetch the example Terraform configuration
+## Step 1/ . Import the Terraform module
 
-1. Fetch the Teleport code repository and copy the example Terraform
-   configuration for this project into your current working directory:
-
-   ```code
-   $ git clone --depth=1 https://github.com/gravitational/teleport
-   $ cp -R teleport/examples/agent-pool-terraform .
-   $ rm -rf teleport
-   ```
-
-1. The example Terraform module includes separate provider configurations for
-   deployments on AWS, Google Cloud, and Azure. Delete the configurations that
-   you are not using:
-
-   <Tabs>
-   <TabItem label="AWS">
-   
-   ```code
-   $ cd agent-pool-terraform
-   $ rm providers-gcp.tf providers-azure.tf gcp-instance.tf azure-instance.tf
-   ```
-   
-   </TabItem>
-   <TabItem label="Google Cloud">
-   
-   ```code
-   $ cd agent-pool-terraform
-   $ rm providers-aws.tf providers-azure.tf ec2-instance.tf azure-instance.tf
-   ```
-   
-   </TabItem>
-   <TabItem label="Azure">
-   
-   ```code
-   $ cd agent-pool-terraform
-   $ rm providers-aws.tf providers-gcp.tf ec2-instance.tf gcp-instance.tf
-   ```
-   
-   </TabItem>
-   </Tabs>
+1. Navigate to the directory where you plan to organize files for your root
+   Terraform module.
 
 1. Move the identity file for the Teleport Terraform provider into your project
    directory so the Terraform provider an access it. Name the file
    `terraform-identity`.
-
+   
    <Notice type="warning">
    
    If you don't have an identity file available, make sure you have followed the
    [prerequisites for this guide](#prerequisites).
    
    </Notice>
+
+1. Create a file called `main.tf` with the following content: 
+
+<Tabs>
+<TabItem label="AWS">
+
+```hcl
+module "teleport" {
+    agent_count=2
+    proxy_service_address="mytenant.teleport.sh"
+    region=""
+    source="github.com/gravitational/teleport/examples/agent-pool-terraform/aws"
+    subnet_id=""
+    teleport_edition="oss"
+    teleport_version="(=teleport.version=)"
+}
+```
+
+</TabItem>
+<TabItem label="Google Cloud">
+
+```hcl
+module "teleport" {
+    agent_count=2
+    gcp_zone=""
+    google_project=""
+    proxy_service_address="mytenant.teleport.sh"
+    region=""
+    source="github.com/gravitational/teleport/examples/agent-pool-terraform/aws"
+    subnet_id=""
+    teleport_edition="oss"
+    teleport_version="(=teleport.version=)"
+}
+```
+
+</TabItem>
+<TabItem label="Azure">
+
+```hcl
+module "teleport" {
+    agent_count=2
+    azure_resource_group=""
+    proxy_service_address="mytenant.teleport.sh"
+    public_key_path=""
+    region=""
+    source="github.com/gravitational/teleport/examples/agent-pool-terraform/aws"
+    subnet_id=""
+    teleport_edition="oss"
+    teleport_version="(=teleport.version=)"
+}
+```
+
+</TabItem>
+</Tabs>
+
+Edit `main.tf` as follows:
+
+1. If needed, change the value of `teleport_version` to the version of Teleport
+   you want to run on your agents. It must be either the same major version as
+   your Teleport cluster or one major version behind.
+
+1. Make sure `teleport_edition` matches your Teleport edition. Assign this to
+   `oss`, `cloud`, `enterprise`, or `team`. The default is `oss`.
+
+Assign the remaining input variables depending on your cloud provider:
+
+<Tabs>
+<TabItem label="AWS">
+
+1. Assign `region` to the AWS region where you plan to deploy Teleport agents,
+   such as `us-east-1`.
+
+1. For `subnet_id`, include the ID of the subnet where you will deploy Teleport
+   agents.
+
+</TabItem>
+<TabItem label="Google Cloud">
+
+1. Assign `region` to the Google Cloud region where you plan to deploy Teleport
+   agents, such as `us-east1`.
+
+1. For `subnet_id`, include the name or URI of the Google Cloud subnet where you
+   will deploy the Teleport agents.
+
+1.  Assign `google_project` to the name of your Google Cloud project and
+    `gcp_zone` to the zone where you will deploy agents, such as `us-east1-a`.
+
+</TabItem>
+<TabItem label="Azure">
+
+1. Assign `region` to the Azure region where you plan to deploy Teleport agents,
+   such as `East US`.
+
+1. For `subnet_id`, include the ID of the subnet where you will deploy Teleport
+   agents.
+
+1. Assign `azure_resource_group` to the name of the Azure resource group where
+   you are deploying Teleport agents.
+
+   The module uses `public_key_path` to pass validation, as Azure VMs must
+   include an RSA public key with at least 2048 bits. Once the module deploys
+   the VMs, a cloud-init script removes the public key and disables OpenSSH. Set
+   this input to the path to a valid public SSH key.
+
+</TabItem>
+</Tabs>
+
+## Step 2/ . Add provider blocks
+
+In this step, you will configure the `agent-pool-terraform` module for your
+Teleport cluster and cloud provider.
+
+In your project directory, create a file called `providers.tf` with the
+following content:
+
+{/* TODO: Add instructions to update placeholder values*/}
+
+<Tabs>
+<TabItem label="AWS">
+
+```hcl
+terraform {
+  required_providers {
+    teleport = {
+      source  = "terraform.releases.teleport.dev/gravitational/teleport"
+      version = "TELEPORT_VERSION"
+    }
+
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = var.region
+}
+
+provider "teleport" {
+  # Update addr to point to your Teleport Cloud tenant URL's host:port
+  addr               = PROXY_SERVICE_ADDRESS
+  identity_file_path = "terraform-identity"
+}
+```
+
+</TabItem>
+<TabItem label="Google Cloud">
+
+```hcl
+terraform {
+  required_providers {
+    teleport = {
+      source  = "terraform.releases.teleport.dev/gravitational/teleport"
+      version = "TELEPORT_VERSION"
+    }
+
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 5.5.0"
+    }
+
+  }
+}
+
+provider "google" {
+  project = GOOGLE_CLOUD_REGION
+  region  = GOOGLE_CLOUD_PROJECT
+}
+
+provider "teleport" {
+  # Update addr to point to your Teleport Cloud tenant URL's host:port
+  addr               = PROXY_SERVICE_ADDRESS
+  identity_file_path = "terraform-identity"
+}
+```
+</TabItem>
+<TabItem label="Azure">
+
+```hcl
+terraform {
+  required_providers {
+    teleport = {
+      source  = "terraform.releases.teleport.dev/gravitational/teleport"
+      version = "TELEPORT_VERSION"
+    }
+
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0.0"
+    }
+  }
+}
+
+provider "teleport" {
+  identity_file_path = "terraform-identity"
+  # Update addr to point to your Teleport Cloud tenant URL's host:port
+  addr               = PROXY_SERVICE_ADDRESS
+}
+
+provider "azurerm" {
+  features {}
+}
+```
+</TabItem>
+</Tabs>
+
+{/* TODO: incorporate everything below this point into the guide above this
+point*/}
 
 ## Step 2/4. Review your Terraform configuration
 
