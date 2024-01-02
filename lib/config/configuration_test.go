@@ -906,6 +906,7 @@ SREzU8onbBsjMg9QDiSf5oJLKvd/Ren+zGY7
 	require.Equal(t, "https://some-endpoint", cfg.Okta.APIEndpoint)
 	require.Equal(t, oktaAPITokenPath, cfg.Okta.APITokenPath)
 	require.Equal(t, time.Second*300, cfg.Okta.SyncPeriod)
+	require.True(t, cfg.Okta.Import.Enabled)
 }
 
 // TestApplyConfigNoneEnabled makes sure that if a section is not enabled,
@@ -3841,7 +3842,7 @@ func TestApplyOktaConfig(t *testing.T) {
 		errAssertionFunc require.ErrorAssertionFunc
 	}{
 		{
-			desc:            "valid config",
+			desc:            "valid config (import defaults to false)",
 			createTokenFile: true,
 			oktaConfig: Okta{
 				Service: Service{
@@ -3852,6 +3853,30 @@ func TestApplyOktaConfig(t *testing.T) {
 			expectedOkta: servicecfg.OktaConfig{
 				Enabled:     true,
 				APIEndpoint: "https://test-endpoint",
+				Import: servicecfg.OktaImportConfig{
+					Enabled: false,
+				},
+			},
+			errAssertionFunc: require.NoError,
+		},
+		{
+			desc:            "valid config (import enabled)",
+			createTokenFile: true,
+			oktaConfig: Okta{
+				Service: Service{
+					EnabledFlag: "yes",
+				},
+				APIEndpoint: "https://test-endpoint",
+				Import: OktaImport{
+					EnabledFlag: "yes",
+				},
+			},
+			expectedOkta: servicecfg.OktaConfig{
+				Enabled:     true,
+				APIEndpoint: "https://test-endpoint",
+				Import: servicecfg.OktaImportConfig{
+					Enabled: true,
+				},
 			},
 			errAssertionFunc: require.NoError,
 		},

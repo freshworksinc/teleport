@@ -2353,6 +2353,29 @@ type Okta struct {
 
 	// SyncPeriod is the duration between synchronization calls.
 	SyncPeriod time.Duration `yaml:"sync_period,omitempty"`
+
+	// Import is the import settings for the Okta service.
+	Import OktaImport `yaml:"import,omitempty"`
+}
+
+// OktaImport represents the import subsection of the okta_service section in the config file.
+type OktaImport struct {
+	// EnabledFlag will enable or disable the Okta importing of access lists. Defaults to false.
+	EnabledFlag string `yaml:"enabled,omitempty"`
+}
+
+func (o *OktaImport) Enabled() bool {
+	if o.EnabledFlag == "" {
+		return false
+	}
+	enabled, _ := apiutils.ParseBool(o.EnabledFlag)
+	return enabled
+}
+
+func (o *OktaImport) Parse() *servicecfg.OktaImportConfig {
+	return &servicecfg.OktaImportConfig{
+		Enabled: o.Enabled(),
+	}
 }
 
 // JamfService is the yaml representation of jamf_service.

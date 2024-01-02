@@ -446,6 +446,13 @@ func (s *PluginOktaSettings) CheckAndSetDefaults() error {
 		return trace.BadParameter("sso_connector_id must be set when user sync enabled")
 	}
 
+	// If import is not set, default to disabling it.
+	if s.Import == nil {
+		s.Import = &PluginOktaImportSettings{
+			Enabled: false,
+		}
+	}
+
 	return nil
 }
 

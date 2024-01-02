@@ -217,6 +217,17 @@ func TestPluginOktaValidation(t *testing.T) {
 		},
 	}
 
+	validSettingsWithImport := &PluginSpecV1_Okta{
+		Okta: &PluginOktaSettings{
+			OrgUrl:         "https://test.okta.com",
+			EnableUserSync: true,
+			SsoConnectorId: "some-sso-connector-id",
+			Import: &PluginOktaImportSettings{
+				Enabled: true,
+			},
+		},
+	}
+
 	validCreds := &PluginCredentialsV1{
 		Credentials: &PluginCredentialsV1_StaticCredentialsRef{
 			&PluginStaticCredentialsRef{
@@ -242,6 +253,18 @@ func TestPluginOktaValidation(t *testing.T) {
 			assertValue: func(t *testing.T, settings *PluginOktaSettings) {
 				require.Equal(t, "https://test.okta.com", settings.OrgUrl)
 				require.True(t, settings.EnableUserSync)
+				require.False(t, settings.Import.Enabled)
+			},
+		},
+		{
+			name:      "valid values are preserved, import populated",
+			settings:  validSettingsWithImport,
+			creds:     validCreds,
+			assertErr: require.NoError,
+			assertValue: func(t *testing.T, settings *PluginOktaSettings) {
+				require.Equal(t, "https://test.okta.com", settings.OrgUrl)
+				require.True(t, settings.EnableUserSync)
+				require.True(t, settings.Import.Enabled)
 			},
 		},
 		{

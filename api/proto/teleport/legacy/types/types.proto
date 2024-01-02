@@ -5623,6 +5623,17 @@ message PluginOktaSettings {
 
   // SSOConnectorID
   string sso_connector_id = 3;
+
+  // Import settings controls the access list import settings for Okta.
+  PluginOktaImportSettings import = 4;
+}
+
+// Defines settings for importing access lists from Okta.
+message PluginOktaImportSettings {
+  option (gogoproto.equal) = true;
+
+  // Enabled should be set to true if the Okta plugin should import access lists from Okta.
+  bool enabled = 1;
 }
 
 // Defines a set of discord channel IDs

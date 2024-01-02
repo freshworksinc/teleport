@@ -33,4 +33,13 @@ type OktaConfig struct {
 
 	// SyncPeriod is the duration between synchronization calls.
 	SyncPeriod time.Duration
+
+	// Import is the settings for importing access lists from Okta.
+	Import OktaImportConfig
+}
+
+// OktaImportConfig specifies the configuration for importing permissions from Okta.
+type OktaImportConfig struct {
+	// Enabled turns the Okta import functionality of the Okta service on or off for this process
+	Enabled bool
 }
