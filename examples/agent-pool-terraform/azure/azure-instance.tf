@@ -1,3 +1,10 @@
+module "teleport" {
+  source = "../teleport"
+  proxy_service_address = var.proxy_service_address
+  teleport_edition = var.teleport_edition
+  teleport_version = var.teleport_version
+}
+
 locals {
   username = "admin_temp"
 }
@@ -15,7 +22,7 @@ resource "azurerm_network_interface" "teleport_agent" {
 }
 
 resource "azurerm_virtual_machine" "teleport_agent" {
-  count = var.cloud == "azure" ? var.agent_count : 0
+  count = var.agent_count
   name  = "teleport-agent-${count.index}"
 
   location            = var.region
@@ -35,11 +42,7 @@ resource "azurerm_virtual_machine" "teleport_agent" {
   os_profile {
     computer_name  = "teleport-agent-${count.index}"
     admin_username = local.username
-    custom_data = templatefile("./userdata", {
-      token                 = teleport_provision_token.agent[count.index].metadata.name
-      proxy_service_address = var.proxy_service_address
-      teleport_version      = var.teleport_version
-    })
+    custom_data = module.teleport.userdata
   }
 
   vm_size = "Standard_B2s"

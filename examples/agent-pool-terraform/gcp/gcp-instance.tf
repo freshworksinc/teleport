@@ -1,5 +1,12 @@
+module "teleport" {
+  source = "../teleport"
+  proxy_service_address = var.proxy_service_address
+  teleport_edition = var.teleport_edition
+  teleport_version = var.teleport_version
+}
+
 resource "google_compute_instance" "teleport_agent" {
-  count = var.cloud == "gcp" ? var.agent_count : 0
+  count = var.agent_count
   name  = "teleport-agent-${count.index}"
   zone  = var.gcp_zone
 
@@ -15,9 +22,5 @@ resource "google_compute_instance" "teleport_agent" {
 
   machine_type = "e2-standard-2"
 
-  metadata_startup_script = templatefile("./userdata", {
-    token                 = teleport_provision_token.agent[count.index].metadata.name
-    proxy_service_address = var.proxy_service_address
-    teleport_version      = var.teleport_version
-  })
+  metadata_startup_script = module.teleport.userdata 
 }

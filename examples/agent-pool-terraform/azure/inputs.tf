@@ -9,15 +9,6 @@ variable "agent_count" {
   description = "Number of agents to deploy"
 }
 
-variable "cloud" {
-  type        = string
-  description = "Cloud provider: aws|gcp|azure"
-  validation {
-    condition     = var.cloud == "aws" || var.cloud == "gcp" || var.cloud == "azure"
-    error_message = "The value of \"cloud\" must be \"aws\", \"gcp\", or \"azure\"."
-  }
-}
-
 variable "proxy_service_address" {
   type        = string
   description = "Host and HTTPS port of the Teleport Proxy Service"
