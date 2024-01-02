@@ -21,6 +21,7 @@ import React, { ComponentProps } from 'react';
 import { useTheme } from 'styled-components';
 
 import { Image } from 'design';
+import userDark from 'design/Icon/assets/User.svg'
 
 import appleDark from './assets/apple-dark.svg';
 import appleLight from './assets/apple-light.svg';
@@ -106,6 +107,9 @@ const iconSpecs = {
   Slack: forAllThemes(slack),
   Snowflake: forAllThemes(snowflake),
   Windows: { dark: windowsDark, light: windowsLight },
+
+  // todo mberg where oh where shall you live
+  User: { dark: userDark, light: userDark },
 };
 
 export type ResourceIconName = keyof typeof iconSpecs;

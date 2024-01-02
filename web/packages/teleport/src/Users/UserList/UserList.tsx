@@ -16,74 +16,44 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import React from 'react';
-import Table, { Cell, LabelCell } from 'design/DataTable';
-import { MenuButton, MenuItem } from 'shared/components/MenuAction';
+import React, { useState } from 'react';
 
-import { User } from 'teleport/services/user';
+import { Server as ServerIcon } from 'design/Icon';
+
+import { ViewMode } from 'shared/services/unifiedResourcePreferences';
+
+import { FilterPanel } from 'shared/components/UnifiedResources/FilterPanel';
+
+import { UnifiedResourcesQueryParams } from 'shared/components/UnifiedResources';
+
+import {
+  UserListProps,
+  UserListViewProps,
+} from 'teleport/Users/UserList/types';
+import { UserActionButton } from 'teleport/Users/UserList/UserActionButton';
+import { UserListView } from 'teleport/Users/UserList/ListView';
+import { UserCardView } from 'teleport/Users/UserList/CardView';
 
 export default function UserList({
   users = [],
-  pageSize = 20,
   onEdit,
   onDelete,
   onReset,
-}: Props) {
-  return (
-    <Table
-      data={users}
-      columns={[
-        {
-          key: 'name',
-          headerText: 'Name',
-          isSortable: true,
-        },
-        {
-          key: 'roles',
-          headerText: 'Roles',
-          isSortable: true,
-          onSort: (a: string[], b: string[]) => {
-            const aStr = a.toString();
-            const bStr = b.toString();
+}: UserListProps) {
+  const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.VIEW_MODE_LIST);
+  const [params, setParams] = useState<UnifiedResourcesQueryParams>({
+    query: '',
+    search: '',
+    sort: {
+      fieldName: 'name',
+      dir: 'ASC',
+    },
+    pinnedOnly: false,
+    kinds: [],
+  });
 
-            if (aStr < bStr) {
-              return -1;
-            }
-            if (aStr > bStr) {
-              return 1;
-            }
-
-            return 0;
-          },
-          render: ({ roles }) => <LabelCell data={roles} />,
-        },
-        {
-          key: 'authType',
-          headerText: 'Type',
-          isSortable: true,
-          render: ({ authType }) => (
-            <Cell style={{ textTransform: 'capitalize' }}>
-              {renderAuthType(authType)}
-            </Cell>
-          ),
-        },
-        {
-          altKey: 'options-btn',
-          render: user => (
-            <ActionCell
-              user={user}
-              onEdit={onEdit}
-              onReset={onReset}
-              onDelete={onDelete}
-            />
-          ),
-        },
-      ]}
-      emptyText="No Users Found"
-      isSearchable
-      pagination={{ pageSize }}
-    />
-  );
+  const ViewComponent =
+    viewMode === ViewMode.VIEW_MODE_LIST ? UserListView : UserCardView;
 
   function renderAuthType(authType: string) {
     switch (authType) {
@@ -93,43 +63,59 @@ export default function UserList({
         return 'SAML';
       case 'oidc':
         return 'OIDC';
+      case 'teleport local user':
+        return 'Teleport Local User';
     }
     return authType;
   }
-}
 
-const ActionCell = ({
-  user,
-  onEdit,
-  onReset,
-  onDelete,
-}: {
-  user: User;
-  onEdit: (user: User) => void;
-  onReset: (user: User) => void;
-  onDelete: (user: User) => void;
-}) => {
-  if (!user.isLocal) {
-    return <Cell align="right" />;
-  }
+  const viewProps: UserListViewProps = {
+    onLabelClick: () => {},
+    selectedResources: [],
+    onSelectResource: () => {},
+    isProcessing: false,
+    mappedUsers: users.map(u => ({
+      item: {
+        name: u.name,
+        roles: u.roles,
+        primaryIconName: 'User',
+        SecondaryIcon: ServerIcon,
+        ActionButton: UserActionButton({
+          user: u,
+          onEdit: onEdit,
+          onReset: onReset,
+          onDelete: onDelete,
+        }),
+        cardViewProps: {
+          primaryDesc: renderAuthType(u.authType),
+          secondaryDesc: '',
+        },
+        listViewProps: {
+          description: '',
+          addr: u.roles.toString(),
+          resourceType: renderAuthType(u.authType),
+        },
+      },
+      key: 'foo',
+    })),
+    expandAllLabels: false,
+  };
 
   return (
-    <Cell align="right">
-      <MenuButton>
-        <MenuItem onClick={() => onEdit(user)}>Edit...</MenuItem>
-        <MenuItem onClick={() => onReset(user)}>
-          Reset Authentication...
-        </MenuItem>
-        <MenuItem onClick={() => onDelete(user)}>Delete...</MenuItem>
-      </MenuButton>
-    </Cell>
+    <>
+      <FilterPanel
+        availableKinds={[]}
+        params={params}
+        setParams={setParams}
+        selectVisible={() => {}}
+        selected={false}
+        // BulkActions?: React.ReactElement
+        currentViewMode={viewMode}
+        setCurrentViewMode={setViewMode}
+        expandAllLabels={false}
+        setExpandAllLabels={() => {}}
+      />
+      <ViewComponent {...viewProps} />
+    </>
   );
-};
-
-type Props = {
-  users: User[];
-  pageSize?: number;
-  onEdit(user: User): void;
-  onDelete(user: User): void;
-  onReset(user: User): void;
-};
+}

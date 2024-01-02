@@ -28,6 +28,7 @@ type Props = MenuProps & {
   buttonProps?: AnchorProps;
   buttonText?: string;
   menuProps?: MenuProps;
+  disabled?: boolean;
 };
 
 export default class MenuActionIcon extends React.Component<
@@ -55,7 +56,7 @@ export default class MenuActionIcon extends React.Component<
 
   render() {
     const { open } = this.state;
-    const { children, menuProps, buttonProps } = this.props;
+    const { children, menuProps, buttonProps, disabled } = this.props;
     return (
       <>
         <ButtonBorder
@@ -63,6 +64,7 @@ export default class MenuActionIcon extends React.Component<
           size="small"
           setRef={e => (this.anchorEl = e)}
           onClick={this.onOpen}
+          disabled={disabled}
           {...buttonProps}
         >
           {this.props.buttonText || 'OPTIONS'}

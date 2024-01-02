@@ -154,12 +154,12 @@ export type ResourceItemProps = {
 // The reason we need this separately defined is because unlike with the list view, what we display in the
 // description sections of a card varies based on the type of its resource. For example, for applications,
 // instead of showing the `Application` type under the name like we would for other resources, we show the description.
-type CardViewSpecificProps = {
+export type CardViewSpecificProps = {
   primaryDesc?: string;
   secondaryDesc?: string;
 };
 
-type ListViewSpecificProps = {
+export type ListViewSpecificProps = {
   description?: string;
   addr?: string;
   resourceType: string;
