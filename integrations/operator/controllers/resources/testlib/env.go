@@ -20,6 +20,7 @@ package testlib
 
 import (
 	"context"
+	"go.uber.org/zap/zapcore"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -33,12 +34,12 @@ import (
 	"github.com/stretchr/testify/require"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	apiruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	kclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
@@ -56,7 +57,7 @@ import (
 
 // scheme is our own test-specific scheme to avoid using the global
 // unprotected scheme.Scheme that triggers the race detector
-var scheme = apiruntime.NewScheme()
+var scheme = resources.Scheme
 
 // MaxTimeDiff is used when writing tests comparing times. Timestamps suffer
 // from being serialized/deserialized with different precisions, the final value
@@ -195,35 +196,11 @@ func (s *TestSetup) StartKubernetesOperator(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	err = (&resources.RoleReconciler{
-		Client:         s.K8sClient,
-		Scheme:         k8sManager.GetScheme(),
-		TeleportClient: s.TeleportClient,
-	}).SetupWithManager(k8sManager)
-	require.NoError(t, err)
+	setupLog := ctrl.Log.WithName("setup")
+	ctrl.SetLogger(zap.New(zap.UseDevMode(true), zap.Level(zapcore.DebugLevel)))
 
-	err = resources.NewUserReconciler(s.K8sClient, s.TeleportClient).SetupWithManager(k8sManager)
-	require.NoError(t, err)
-
-	err = resources.NewGithubConnectorReconciler(s.K8sClient, s.TeleportClient).SetupWithManager(k8sManager)
-	require.NoError(t, err)
-
-	err = resources.NewOIDCConnectorReconciler(s.K8sClient, s.TeleportClient).SetupWithManager(k8sManager)
-	require.NoError(t, err)
-
-	err = resources.NewSAMLConnectorReconciler(s.K8sClient, s.TeleportClient).SetupWithManager(k8sManager)
-	require.NoError(t, err)
-
-	err = resources.NewLoginRuleReconciler(s.K8sClient, s.TeleportClient).SetupWithManager(k8sManager)
-	require.NoError(t, err)
-
-	err = resources.NewProvisionTokenReconciler(s.K8sClient, s.TeleportClient).SetupWithManager(k8sManager)
-	require.NoError(t, err)
-
-	err = resources.NewOktaImportRuleReconciler(s.K8sClient, s.TeleportClient).SetupWithManager(k8sManager)
-	require.NoError(t, err)
-
-	err = resources.NewAccessListReconciler(s.K8sClient, s.TeleportClient).SetupWithManager(k8sManager)
+	pong, err := s.TeleportClient.Ping(context.Background())
+	err = resources.SetupAllControllers(setupLog, k8sManager, s.TeleportClient, pong.ServerFeatures)
 	require.NoError(t, err)
 
 	ctx, ctxCancel := context.WithCancel(context.Background())
