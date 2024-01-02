@@ -315,7 +315,7 @@ In this section, we explain the resources configured in the Terraform module
 that you copied earlier. We then show you how to assign input variables so you
 can deploy an agent pool in your infrastructure.
 
-### Instances and tokens
+### Join token
 
 In this minimal example, we deploy one virtual machine instance for each
 Teleport agent. Each agent joins the cluster using a token. We create each token
@@ -323,14 +323,14 @@ using the `teleport_provision_token` Terraform resource, specifying the token's
 value with a `random_string` resource:
 
 ```hcl
-(!examples/agent-pool-terraform/token.tf!)
+(!examples/agent-pool-terraform/teleport/token.tf!)
 ```
 
 When we apply the `teleport_provision_token` resources, the Teleport Terraform
 provider creates them on the Teleport Auth Service backend. 
 
 The Teleport Auth Service associates the join token with one or more roles,
-identifying the Teleport service that is allowed to use the token.  Modify
+identifying the Teleport service that is allowed to use the token. Modify
 `token.tf` to uncomment the token roles that correspond to the Teleport services
 you plan to run on your agent nodes:
 
@@ -340,16 +340,12 @@ you plan to run on your agent nodes:
 - Teleport Kubernetes Service (`Kube`)
 - Teleport SSH Service (`Node`)
 
-Each virtual machine instance presents the token in order to establish trust
-with the cluster:
+### Virtual machine instances
 
-```hcl
-(!examples/agent-pool-terraform/token.tf!)
-```
+{/* TODO: Come up with a better way to configure each instance for direct
+access*/}
 
-Each virtual machine instance presents the token in order to establish trust
-with the cluster. Depending on how you modified the `agent-pool-terraform`
-project directory earlier, it declares resources to deploy a virtual machine
+Each cloud-specific module declares resources to deploy a virtual machine
 instance on your cloud provider:
 
 <Tabs>
@@ -360,7 +356,7 @@ and uses it to launch EC2 instances that run Teleport agents with the
 `teleport_provision_token` resource:
 
 ```hcl
-(!examples/agent-pool-terraform/ec2-instance.tf!)
+(!examples/agent-pool-terraform/aws/ec2-instance.tf!)
 ```
 
 If you are deploying your instance in a demo environment and do not have a NAT
@@ -379,7 +375,7 @@ associate_public_ip_address = true
 `teleport_provision_token` to run Teleport agents:
 
 ```hcl
-(!examples/agent-pool-terraform/gcp-instance.tf!)
+(!examples/agent-pool-terraform/gcp/gcp-instance.tf!)
 ```
 
 If you are deploying your instances in a demo environment and have not
@@ -404,7 +400,7 @@ a temporary one to pass validation, but uses Teleport to enable access to the
 instances:
 
 ```hcl
-(!examples/agent-pool-terraform/azure-instance.tf!)
+(!examples/agent-pool-terraform/azure/azure-instance.tf!)
 ```
 
 If you are deploying your instance in a demo environment and have not configured
@@ -437,7 +433,7 @@ Proxy Service, modify `azure-instance.tf` as follows:
 
 Each EC2 instance runs a script on startup, which we configured above using the
 `user_data` field within the `aws_instance.teleport_agent` resource
-(`examples/agent-pool-terraform/userdata`):
+(`examples/agent-pool-terraform/teleport/userdata`):
 
 ```text
 (!examples/agent-pool-terraform/userdata!)
