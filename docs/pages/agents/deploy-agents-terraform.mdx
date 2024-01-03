@@ -61,7 +61,7 @@ a demo cluster using:
 
 - (!docs/pages/includes/tctl.mdx!)
 
-## Step 1/ . Import the Terraform module
+## Step 1/4. Import the Terraform module
 
 1. Navigate to the directory where you plan to organize files for your root
    Terraform module.
@@ -224,7 +224,7 @@ Assign the remaining input variables depending on your cloud provider:
 </TabItem>
 </Tabs>
 
-## Step 2/ . Add provider configurations
+## Step 2/4. Add provider configurations
 
 In this step, you will configure the `agent-pool-terraform` module for your
 Teleport cluster and cloud provider.
@@ -334,77 +334,11 @@ provider "azurerm" {
    $ sed -i "" "s/TELEPORT_VERSION/(=teleport.plugin.version=)/" providers-azure.tf
    ```
 
-{/* TODO: incorporate everything below this point into the guide above this
-point*/}
+## Step 3/4. Edit the agent configuration
 
-## Step 2/4. Review your Terraform configuration
-
-In this section, we explain the resources configured in the Terraform module
-that you copied earlier. We then show you how to assign input variables so you
-can deploy an agent pool in your infrastructure.
-
-### Join token
-
-In this minimal example, we deploy one virtual machine instance for each
-Teleport agent. Each agent joins the cluster using a token. We create each token
-using the `teleport_provision_token` Terraform resource, specifying the token's
-value with a `random_string` resource:
-
-```hcl
-(!examples/agent-pool-terraform/teleport/token.tf!)
-```
-
-When we apply the `teleport_provision_token` resources, the Teleport Terraform
-provider creates them on the Teleport Auth Service backend. 
-
-### Virtual machine instances
-
-Each cloud-specific module declares resources to deploy a virtual machine
-instance on your cloud provider:
-
-<Tabs>
-<TabItem label="AWS">
-
-`ec2-instance.tf` declares a data source for an Amazon Linux 2023 machine image
-and uses it to launch EC2 instances that run Teleport agents with the
-`teleport_provision_token` resource:
-
-```hcl
-(!examples/agent-pool-terraform/aws/ec2-instance.tf!)
-```
-
-</TabItem>
-<TabItem label="Google Cloud">
-
-`gcp-instance.tf` declares Google Compute Engine instances that use the
-`teleport_provision_token` to run Teleport agents:
-
-```hcl
-(!examples/agent-pool-terraform/gcp/gcp-instance.tf!)
-```
-
-</TabItem>
-<TabItem label="Azure">
-
-`azure-instance.tf` declares an Azure virtual machine resource to run Teleport
-agents using the `teleport_provision_token` resource, plus the required network
-interface for each instance. 
-
-Note that while Azure VM instances require a user account, this module declares
-a temporary one to pass validation, but uses Teleport to enable access to the
-instances:
-
-```hcl
-(!examples/agent-pool-terraform/azure/azure-instance.tf!)
-```
-
-</TabItem>
-</Tabs>
-
-### Startup script
-
-Each EC2 instance runs a script on startup, which we configured above using the
-`user_data` field within the `aws_instance.teleport_agent` resource
+Each virtual machine launched by the module runs a script on startup, which we
+configured above using the `user_data` field within the
+`aws_instance.teleport_agent` resource
 (`examples/agent-pool-terraform/teleport/userdata`):
 
 ```yaml
@@ -432,9 +366,9 @@ each service you want to enable:
 +  enabled: true
 ```
 
-Configure the `teleport_provision_token` resource to include a role that
-corresponds to each service you plan to run. For example, if you enable the
-Teleport Kubernetes Service, the token must have the `Kube` role.
+Ensure that the value of the `agent_roles` field in the `module` block
+corresponds to all of the Teleport services you have enabled in the
+configuration.
 
 The cloud-init script run by each VM makes Teleport the only option for
 accessing agent instances by disabling OpenSSH on startup and deleting any
@@ -462,6 +396,8 @@ Node Name                  Address    Labels
 ip-10-1-1-187.ec2.internal ⟵ Tunnel   role=agent-pool
 ip-10-1-1-24.ec2.internal  ⟵ Tunnel   role=agent-pool
 ```
+
+
 
 ## Next step: Enroll infrastructure resources
 
@@ -550,3 +486,68 @@ To see how to configure each service, read its section of the documentation:
 - [Kubernetes Service](../kubernetes-access/introduction.mdx)
 - [Windows Desktop Service](../desktop-access/introduction.mdx)
 - [Application Service](../application-access/introduction.mdx)
+
+## Further reading: How the module works
+
+In this section, we explain the resources configured in the Terraform module
+that you imported earlier.
+
+### Join token
+
+In this minimal example, we deploy one virtual machine instance for each
+Teleport agent. Each agent joins the cluster using a token. We create each token
+using the `teleport_provision_token` Terraform resource, specifying the token's
+value with a `random_string` resource:
+
+```hcl
+(!examples/agent-pool-terraform/teleport/token.tf!)
+```
+
+When we apply the `teleport_provision_token` resources, the Teleport Terraform
+provider creates them on the Teleport Auth Service backend. 
+
+### Virtual machine instances
+
+Each cloud-specific module declares resources to deploy a virtual machine
+instance on your cloud provider:
+
+<Tabs>
+<TabItem label="AWS">
+
+`ec2-instance.tf` declares a data source for an Amazon Linux 2023 machine image
+and uses it to launch EC2 instances that run Teleport agents with the
+`teleport_provision_token` resource:
+
+```hcl
+(!examples/agent-pool-terraform/aws/ec2-instance.tf!)
+```
+
+</TabItem>
+<TabItem label="Google Cloud">
+
+`gcp-instance.tf` declares Google Compute Engine instances that use the
+`teleport_provision_token` to run Teleport agents:
+
+```hcl
+(!examples/agent-pool-terraform/gcp/gcp-instance.tf!)
+```
+
+</TabItem>
+<TabItem label="Azure">
+
+`azure-instance.tf` declares an Azure virtual machine resource to run Teleport
+agents using the `teleport_provision_token` resource, plus the required network
+interface for each instance. 
+
+Note that while Azure VM instances require a user account, this module declares
+a temporary one to pass validation, but uses Teleport to enable access to the
+instances:
+
+```hcl
+(!examples/agent-pool-terraform/azure/azure-instance.tf!)
+```
+
+</TabItem>
+</Tabs>
+
+
