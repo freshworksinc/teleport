@@ -9,6 +9,12 @@ variable "agent_count" {
   description = "Number of agents to deploy"
 }
 
+variable "insecure_direct_access" {
+  type = bool
+  default = false
+  description = "Whether to enable direct access to agent instances. Only enable this in low-security demo environments."
+}
+
 variable "proxy_service_address" {
   type        = string
   description = "Host and HTTPS port of the Teleport Proxy Service"

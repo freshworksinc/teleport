@@ -1,8 +1,8 @@
 module "teleport" {
-  source = "../teleport"
+  source                = "../teleport"
   proxy_service_address = var.proxy_service_address
-  teleport_edition = var.teleport_edition
-  teleport_version = var.teleport_version
+  teleport_edition      = var.teleport_edition
+  teleport_version      = var.teleport_version
 }
 
 locals {
@@ -18,7 +18,16 @@ resource "azurerm_network_interface" "teleport_agent" {
     name                          = "teleport_agent_ip_config"
     subnet_id                     = var.subnet_id
     private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = var.insecure_direct_access ? azurerm_public_ip.agent[count.index].id : ""
   }
+}
+
+resource "azurerm_public_ip" "agent" {
+  count               = var.insecure_direct_access ? var.agent_count : 0
+  name                = "agentIP-${count.index}"
+  resource_group_name = var.azure_resource_group
+  location            = var.region
+  allocation_method   = "Static"
 }
 
 resource "azurerm_virtual_machine" "teleport_agent" {
@@ -42,7 +51,7 @@ resource "azurerm_virtual_machine" "teleport_agent" {
   os_profile {
     computer_name  = "teleport-agent-${count.index}"
     admin_username = local.username
-    custom_data = module.teleport.userdata
+    custom_data    = module.teleport.userdata
   }
 
   vm_size = "Standard_B2s"
