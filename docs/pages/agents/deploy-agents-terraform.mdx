@@ -153,6 +153,16 @@ Edit `main.tf` as follows:
 1. Make sure `teleport_edition` matches your Teleport edition. Assign this to
    `oss`, `cloud`, `enterprise`, or `team`. The default is `oss`.
 
+
+1. If you are deploying your instance in a demo environment and do not have a
+   NAT gateway, NAT instance, or other method for connecting your instances to
+   the Teleport Proxy Service, modify the `module` block to associate a
+   public IP address with each agent instance: 
+
+   ```hcl
+   insecure_direct_access=true
+   ```
+
 Assign the remaining input variables depending on your cloud provider:
 
 <Tabs>
@@ -342,9 +352,6 @@ you plan to run on your agent nodes:
 
 ### Virtual machine instances
 
-{/* TODO: Come up with a better way to configure each instance for direct
-access*/}
-
 Each cloud-specific module declares resources to deploy a virtual machine
 instance on your cloud provider:
 
@@ -359,15 +366,6 @@ and uses it to launch EC2 instances that run Teleport agents with the
 (!examples/agent-pool-terraform/aws/ec2-instance.tf!)
 ```
 
-If you are deploying your instance in a demo environment and do not have a NAT
-gateway, NAT instance, or other method for connecting your instances to the
-Teleport Proxy Service, modify the `aws_instance` resource to associate a public
-IP address with it:
-
-```hcl
-associate_public_ip_address = true
-```
-
 </TabItem>
 <TabItem label="Google Cloud">
 
@@ -376,16 +374,6 @@ associate_public_ip_address = true
 
 ```hcl
 (!examples/agent-pool-terraform/gcp/gcp-instance.tf!)
-```
-
-If you are deploying your instances in a demo environment and have not
-configured Google Cloud NAT or other method for connecting your instances to the
-Teleport Proxy Service, modify the `google_compute_instance` resource to
-associate a public IP address with it by adding the following to the
-`network_interface` block:
-
-```hcl
-    access_config {}
 ```
 
 </TabItem>
@@ -402,29 +390,6 @@ instances:
 ```hcl
 (!examples/agent-pool-terraform/azure/azure-instance.tf!)
 ```
-
-If you are deploying your instance in a demo environment and have not configured
-Azure NAT gateway or other method for connecting your instances to the Teleport
-Proxy Service, modify `azure-instance.tf` as follows:
-
-1. Add an `azurerm_public_ip` resource:
-
-   ```hcl
-   resource "azurerm_public_ip" "agent" {
-     count               = var.agent_count
-     name                = "agentIP-${count.index}"
-     resource_group_name = var.azure_resource_group
-     location            = var.region
-     allocation_method   = "Static"
-   }  
-   ```
-
-1. Edit the `ip_configuration` block inside the `azurerm_network_interface`
-   resource to add the following line:
-
-   ```hcl
-   public_ip_address_id = azurerm_public_ip.agent[count.index].id
-   ```
 
 </TabItem>
 </Tabs>
