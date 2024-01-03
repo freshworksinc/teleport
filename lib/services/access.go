@@ -22,8 +22,9 @@ import (
 	"context"
 	"strings"
 
-	"github.com/gravitational/teleport/api/types"
 	"github.com/gravitational/trace"
+
+	"github.com/gravitational/teleport/api/types"
 )
 
 // LockGetter is a service that gets locks.
