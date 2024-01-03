@@ -1,3 +1,23 @@
+locals {
+  all_roles = [
+    "App",
+    "Db",
+    "Discovery",
+    "Kube",
+    "Node",
+  ]
+}
+
+variable "agent_roles" {
+  type        = list(string)
+  description = "The roles that the agent is allowed to have."
+  default     = ["Node"]
+  validation {
+    condition     = length(setsubtract(var.agent_roles, local.all_roles)) == 0
+    error_message = "agent_roles must be one or more of ${join(", ", local.all_roles)}"
+  }
+}
+
 variable "proxy_service_address" {
   type        = string
   description = "Host and HTTPS port of the Teleport Proxy Service"

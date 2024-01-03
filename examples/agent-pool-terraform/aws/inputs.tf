@@ -3,9 +3,14 @@ variable "agent_count" {
   description = "Number of agents to deploy"
 }
 
+// The teleport module performs validation and sets defaults.
+variable "agent_roles" {
+  type = list(string)
+}
+
 variable "insecure_direct_access" {
-  type = bool
-  default = false
+  type        = bool
+  default     = false
   description = "Whether to enable direct access to agent instances. Only enable this in low-security demo environments."
 }
 
