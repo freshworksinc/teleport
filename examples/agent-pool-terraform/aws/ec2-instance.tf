@@ -1,8 +1,8 @@
 module "teleport" {
-  source = "../teleport"
+  source                = "../teleport"
   proxy_service_address = var.proxy_service_address
-  teleport_edition = var.teleport_edition
-  teleport_version = var.teleport_version
+  teleport_edition      = var.teleport_edition
+  teleport_version      = var.teleport_version
 }
 
 data "aws_ami" "amazon_linux_2023" {
@@ -30,16 +30,15 @@ data "aws_ami" "amazon_linux_2023" {
 }
 
 resource "aws_instance" "teleport_agent" {
-  count         = var.agent_count
-  ami           = data.aws_ami.amazon_linux_2023.id
-  instance_type = "t3.small"
-  subnet_id     = var.subnet_id
-  user_data = module.teleport.userdata
+  count                       = var.agent_count
+  ami                         = data.aws_ami.amazon_linux_2023.id
+  instance_type               = "t3.small"
+  subnet_id                   = var.subnet_id
+  user_data                   = module.teleport.userdata
+  associate_public_ip_address = var.insecure_direct_access
 
-  // The following two blocks adhere to security best practices.
-
-  associate_public_ip_address = false
-  monitoring                  = true
+  // Adheres to security best practices
+  monitoring = true
 
   metadata_options {
     http_endpoint = "enabled"
