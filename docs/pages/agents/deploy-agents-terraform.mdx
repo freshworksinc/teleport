@@ -49,8 +49,8 @@ a demo cluster using:
     - Google Cloud NAT
     - Azure NAT Gateway
 
-  For demo purposes, you can also configure the VM instances you deploy to
-  have public IP addresses.
+  For demo purposes, you can also configure the VM instances you deploy to have
+  public IP addresses, and we will show you how to do so in this guide.
 
 - Terraform v(=terraform.version=) or higher.
 
@@ -85,6 +85,7 @@ a demo cluster using:
 ```hcl
 module "teleport" {
     agent_count=2
+    agent_roles=["Node"]
     proxy_service_address="mytenant.teleport.sh"
     region=""
     source="github.com/gravitational/teleport/examples/agent-pool-terraform/aws"
@@ -100,6 +101,7 @@ module "teleport" {
 ```hcl
 module "teleport" {
     agent_count=2
+    agent_roles=["Node"]
     gcp_zone=""
     google_project=""
     proxy_service_address="mytenant.teleport.sh"
@@ -117,6 +119,7 @@ module "teleport" {
 ```hcl
 module "teleport" {
     agent_count=2
+    agent_roles=["Node"]
     azure_resource_group=""
     proxy_service_address="mytenant.teleport.sh"
     public_key_path=""
@@ -131,11 +134,26 @@ module "teleport" {
 </TabItem>
 </Tabs>
 
-Edit `main.tf` as follows:
+Edit  the `module` block in `main.tf` as follows:
 
 1. Assign `agent_count` to `2` for high availability. As you scale your Teleport
    usage, you can increase this count to ease the load on each agent. You can
    consider adding your agents to an Auto Scaling group as well.
+
+1. Assign a value to `agent_roles`. 
+
+   The Teleport Auth Service associates the join token with one or more roles,
+   identifying the Teleport services that are allowed to use the token. Modify
+   `agent_roles` to include the token roles that correspond to the Teleport
+   services you plan to run on your agent nodes:
+
+   | Role value  | Service it enables           |
+   |-------------|------------------------------|
+   | `App`       | Teleport Application Service |
+   | `Discovery` | Teleport Discovery Service   |
+   | `Db`        | Teleport Database Service    |
+   | `Kube`      | Teleport Kubernetes Service  |
+   | `Node`      | Teleport SSH Service         |
 
 1. Assign `proxy_service_address` to the host and HTTPS port of your Teleport
    Proxy Service, e.g., `mytenant.teleport.sh:443`.
@@ -206,7 +224,7 @@ Assign the remaining input variables depending on your cloud provider:
 </TabItem>
 </Tabs>
 
-## Step 2/ . Add provider blocks
+## Step 2/ . Add provider configurations
 
 In this step, you will configure the `agent-pool-terraform` module for your
 Teleport cluster and cloud provider.
@@ -338,17 +356,6 @@ value with a `random_string` resource:
 
 When we apply the `teleport_provision_token` resources, the Teleport Terraform
 provider creates them on the Teleport Auth Service backend. 
-
-The Teleport Auth Service associates the join token with one or more roles,
-identifying the Teleport service that is allowed to use the token. Modify
-`token.tf` to uncomment the token roles that correspond to the Teleport services
-you plan to run on your agent nodes:
-
-- Teleport Application Service (`App`)
-- Teleport Discovery Service (`Discovery`)
-- Teleport Database Service (`Db`)
-- Teleport Kubernetes Service (`Kube`)
-- Teleport SSH Service (`Node`)
 
 ### Virtual machine instances
 
