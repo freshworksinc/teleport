@@ -1,5 +1,5 @@
 ---
-authors: Hugo Hervieux (hugo.hervieux@goteleport.com)
+authors: @hugoShaka (hugo.hervieux@goteleport.com)
 state: draft
 ---
 
@@ -109,22 +109,28 @@ more details.
 
 ### Pros
 
+- This approach ensures the operator behaves like other regular Teleport clients
+  (`tctl` and the Terraform Provider), it passes the spec and leaves to Teleport:
+  - the validation
+  - the defaults
+  - the conversion between versions
+- This is the same versioning approach we are already using for the Terraform Provider.
 - This is backward compatible as we can default to the existing versions when
   the `teleportResourceVersion` field is not set. We can also continue to support the
   existing CRD APIs.
+- This design doesn't add new failure modes.
+- Upgrading the resource version is straightforward for a Teleport user: they change both the
+  `teleportResourceVersion` and the affected `spec` fields simultaneously.
 - The implementation cost of this solution is several orders of magnitude lower
   than the alternatives. See [the Alternatives section](#alternatives).
-- This is the same versioning approach we are already using for the Terraform Provider.
-- This design doesn't add new failure modes, unlike solutions implying conversion webhooks.
-- Upgrading the resource version is easy for a Teleport user: they change both the
-  `teleportResourceVersion` and the affected `spec` fields simultaneously.
 
 ### Cons
 
 - This design doesn't follow usual Kubernetes resource versioning.
 - Settling on `vX` can be confusing. See [the API evolution section](#api-evolution).
 - This design relies on the fact we don't radically change the resource structure.
-  See [the API evolution section](#api-evolution).
+  See [the API evolution section](#api-evolution). This is already the case for the other IaC
+  Teleport integration: the Terraform Provider.
 
 ### Security
 
@@ -166,25 +172,46 @@ The Kubernetes-friendly approach would be to make the operator aware of how the
 resource is stored in Kubernetes, and do the conversions for every Kubernetes CR
 API call via webhooks.
 
-This alternative has been rejected because of the following reasons:
-- We currently handle resource conversion only from the old version to the newer versions,
-  this would require implementing bidirectional conversion between each resource version
-  (or use a Hub & Spoke approach by converting every version to a common version). This also 
-  raises questions about how to represent non-supported fields during downgrades (e.g. a
-  user gets a Role v7 through a Role v5 API). This would increase the cost of adding new
-  resources and increase the chances of addings bugs in the conversions due to the increasing
-  conversion matrix.
-- We are currently working on hiding `CheckAndSetDefaults()` from the client
-  and consolidating defaults injection and resource conversion server-side
-  This approach is not compatible with the conversion hooks pattern as we'd
+Handling resource conversion at the operator level requires the operator to
+validate the resource, set its defaults, and convert between versions. This
+causes several problems:
+- For every other client, this is Teleport's responsibility to run
+  `CheckAndSetDefaults` and to handle conversion. This makes the operator a
+  client behaving differently, and blurs the responsibility between Teleport and 
+  its clients.
+- the operator can disagree with Teleport about the rules to validate a resource
+  or set its defaults. e.g. If the operator runs a different version than
+  Teleport, creating a resource via the operator and via `tctl` will result in
+  different behaviors.
+- the operator might not have all the information to sanely set the defaults for
+  a resource, validate it, and convert it. The resource manifests are not purely
+  descriptive and owned by the user, many of the resources have spec fields set
+  server-side, sometimes depending on external factors such as other resources
+  or third party services. This is not a good design, and we're converging to a
+  formal `Spec`/`Status` separation in RFD 0153, but the existing resources are
+  flawed.
+
+
+This approach can also cause additional friction:
+- We currently handle resource conversion only from the old version to the newer
+  versions, this would require implementing bidirectional conversion between
+  each resource version (or use a Hub & Spoke approach by converting every 
+  version to a common version). This would increase the cost of adding new
+  resource versions and increase the chances of adding bugs in the conversions
+  due to the size of conversion matrix.
+- We are currently working on hiding `CheckAndSetDefaults()` from the client and consolidating 
+  defaults injection and resource conversion server-side. This approach is not compatible
+  with the conversion hooks pattern as we'd
   need to run `CheckAndSetDefaults` in the operator and duplicate the logic.
-- This requires relying on conversion webhooks:
-  - This adds new failure modes: the operator is not healthy, kubernetes cannot talk to the operator
-  - Not all Kubernetes distributions support kube control plane to workload communication by default
-    (this is blocked on private GKE clusters, and most security teams also block this on their EKS clusters).
-    This would slow adoption and worsen UX.
-  - This requires the webhook server to be trusted by Kubernetes, which implies creating a CA, signing certs,
-    and putting them in the CRD resource. This complexifies the deployment process a lot.
+- This requires relying on conversion webhooks, overall making the operator
+  setup more difficult and harming both user experience and availability:
+  - Hooks add new failure modes: the operator is not healthy, kubernetes cannot
+    talk to the operator.
+  - Not all Kubernetes distributions support kube control plane to workload
+    communication by default. Examples can be found [in cert-manager's
+    documentation](https://cert-manager.io/docs/concepts/webhook/#known-problems-and-solutions)
+  - Kubernetes must trust the webhook server. This implies creating a CA,
+    issuing certs, and inserting x509 material in the CRD resource.
 - The cost of implementing this solution is way higher than the other alternatives.
 
 #### Introducing a new API
