@@ -400,8 +400,8 @@ Each EC2 instance runs a script on startup, which we configured above using the
 `user_data` field within the `aws_instance.teleport_agent` resource
 (`examples/agent-pool-terraform/teleport/userdata`):
 
-```text
-(!examples/agent-pool-terraform/userdata!)
+```yaml
+(!examples/agent-pool-terraform/agent-config.yaml!)
 ```
 
 This script installs Teleport Community Edition on the host, then writes a
@@ -415,18 +415,19 @@ later.
 Finally, the script restarts Teleport on the host to apply the new
 configuration.
 
-In the example above, only the Teleport SSH Service is enabled. Edit the script
-to enable each Teleport service you plan to run on your agent nodes by making
-the following change for each service you want to enable:
+In the default configuration, only the Teleport SSH Service is enabled. Edit
+`examples/agent-pool-terraform/agent-config.yaml` to enable each Teleport
+service you plan to run on your agent nodes by making the following change for
+each service you want to enable:
 
 ```diff
 -  enabled: false
 +  enabled: true
 ```
 
-Make sure you have configured the `teleport_provision_token` resource to include
-a role that corresponds to each service you plan to run. For example, if you
-enable the Teleport Kubernetes Service, the token must have the `Kube` role.
+Configure the `teleport_provision_token` resource to include a role that
+corresponds to each service you plan to run. For example, if you enable the
+Teleport Kubernetes Service, the token must have the `Kube` role.
 
 The cloud-init script run by each VM makes Teleport the only option for
 accessing agent instances by disabling OpenSSH on startup and deleting any
