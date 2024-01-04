@@ -20,6 +20,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/gravitational/trace"
@@ -66,6 +67,7 @@ type Access interface {
 // CheckDynamicLabelsInDenyRules checks if any deny rules in the given role use
 // labels prefixed with "dynamic/".
 func CheckDynamicLabelsInDenyRules(r types.Role) error {
+	errorMessage := fmt.Sprintf("labels with %q prefix are not allowed in deny rules", types.TeleportDynamicLabelPrefix)
 	for _, labels := range []types.Labels{
 		r.GetNodeLabels(types.Deny),
 		r.GetAppLabels(types.Deny),
@@ -76,8 +78,17 @@ func CheckDynamicLabelsInDenyRules(r types.Role) error {
 	} {
 		for label := range labels {
 			if strings.HasPrefix(label, types.TeleportDynamicLabelPrefix) {
-				return trace.BadParameter("labels with %q prefix are not allowed in deny rules", types.TeleportDynamicLabelPrefix)
+				return trace.BadParameter(errorMessage)
 			}
+		}
+	}
+
+	for _, where := range []string{
+		r.GetAccessReviewConditions(types.Deny).Where,
+		r.GetImpersonateConditions(types.Deny).Where,
+	} {
+		if strings.Contains(where, types.TeleportDynamicLabelPrefix) {
+			return trace.BadParameter(errorMessage)
 		}
 	}
 

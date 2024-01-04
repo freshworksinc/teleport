@@ -438,7 +438,7 @@ func (rc *ResourceCommand) createRole(ctx context.Context, client auth.ClientI, 
 		return trace.Wrap(err)
 	}
 	if err := services.CheckDynamicLabelsInDenyRules(role); err != nil {
-		return trace.Wrap(err)
+		return trace.BadParameter(dynamicLabelWarningMessage(role))
 	}
 
 	warnAboutKubernetesResources(rc.config.Log, role)
@@ -499,6 +499,11 @@ func warnAboutKubernetesResources(logger utils.Logger, r types.Role) {
 	}
 }
 
+func dynamicLabelWarningMessage(r types.Role) string {
+	return fmt.Sprintf("existing role %q has labels with the %q prefix in its deny rules. This is not recommended due to the volatitily of %q labels and is not allowed for new roles",
+		r.GetName(), types.TeleportDynamicLabelPrefix, types.TeleportDynamicLabelPrefix)
+}
+
 // warnAboutDynamicLabelsInDenyRule warns about using dynamic/ labels in deny
 // rules. Only applies to existing roles as adding dynamic/ labels to deny
 // rules in a new role is not allowed.
@@ -506,8 +511,7 @@ func warnAboutDynamicLabelsInDenyRule(logger utils.Logger, r types.Role) {
 	if err := services.CheckDynamicLabelsInDenyRules(r); err == nil {
 		return
 	}
-	logger.Warningf("existing role %q has labels with the %q prefix in its deny rules. This is not recommended due to the volatitily of %q labels and is not allowed for new roles",
-		r.GetName(), types.TeleportDynamicLabelPrefix, types.TeleportDynamicLabelPrefix)
+	logger.Warningf(dynamicLabelWarningMessage(r))
 }
 
 // createUser implements `tctl create user.yaml` command.
