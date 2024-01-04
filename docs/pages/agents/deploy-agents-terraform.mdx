@@ -336,39 +336,19 @@ provider "azurerm" {
 
 ## Step 3/4. Edit the agent configuration
 
-Each virtual machine launched by the module runs a script on startup, which we
-configured above using the `user_data` field within the
-`aws_instance.teleport_agent` resource
-(`examples/agent-pool-terraform/teleport/userdata`):
+Each virtual machine launched by the module runs a script on startup This script
+installs Teleport on the host, then writes a configuration file to the default
+location, `/etc/teleport.yaml`. The configuration file enables each Teleport
+service we associated with our token.
 
-```yaml
-(!examples/agent-pool-terraform/agent-config.yaml!)
-```
-
-This script installs Teleport Community Edition on the host, then writes a
-configuration file to the default location, `/etc/teleport.yaml`. The
-configuration file enables each Teleport service we associated with our token.
-
-The configuration also adds the `role: agent-pool` label to the Teleport SSH
-Service on each instance. This makes it easier to access hosts in the agent pool
-later.
+If the `agent_roles` input variable includes the `Node` role, the configuration
+also adds the `role: agent-pool` label to the Teleport SSH Service on each
+instance. This makes it easier to access hosts in the agent pool later.
 
 Finally, the script restarts Teleport on the host to apply the new
 configuration.
 
-In the default configuration, only the Teleport SSH Service is enabled. Edit
-`examples/agent-pool-terraform/agent-config.yaml` to enable each Teleport
-service you plan to run on your agent nodes by making the following change for
-each service you want to enable:
-
-```diff
--  enabled: false
-+  enabled: true
-```
-
-Ensure that the value of the `agent_roles` field in the `module` block
-corresponds to all of the Teleport services you have enabled in the
-configuration.
+In the default configuration, only the Teleport SSH Service is enabled.
 
 The cloud-init script run by each VM makes Teleport the only option for
 accessing agent instances by disabling OpenSSH on startup and deleting any
@@ -396,8 +376,6 @@ Node Name                  Address    Labels
 ip-10-1-1-187.ec2.internal ⟵ Tunnel   role=agent-pool
 ip-10-1-1-24.ec2.internal  ⟵ Tunnel   role=agent-pool
 ```
-
-
 
 ## Next step: Enroll infrastructure resources
 
