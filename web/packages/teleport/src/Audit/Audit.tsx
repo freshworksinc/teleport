@@ -16,10 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 
 import { Danger } from 'design/Alert';
 import { Indicator, Box } from 'design';
+import { ClusterDropdown } from 'shared/components/ClusterDropdown/ClusterDropdown';
 
 import RangePicker from 'teleport/components/EventRangePicker';
 import {
@@ -54,6 +55,7 @@ export function Audit(props: State) {
     fetchMore,
     fetchStatus,
   } = props;
+  const [errorMessage, setErrorMessage] = useState('');
 
   return (
     <FeatureBox>
@@ -71,6 +73,12 @@ export function Audit(props: State) {
       {attempt.status === 'processing' && (
         <Box textAlign="center" m={10}>
           <Indicator />
+        </Box>
+      )}
+      {errorMessage !== '' && <Danger>{errorMessage}</Danger>}
+      {errorMessage === '' && (
+        <Box mb={4}>
+          <ClusterDropdown value={clusterId} onError={setErrorMessage} />
         </Box>
       )}
       {attempt.status === 'success' && (

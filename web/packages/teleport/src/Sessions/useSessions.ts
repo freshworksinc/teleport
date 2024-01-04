@@ -51,6 +51,7 @@ export default function useSessions(ctx: Ctx, clusterId: string) {
   }, [clusterId]);
 
   return {
+    clusterId,
     attempt,
     sessions,
     // moderated is available with any enterprise editions

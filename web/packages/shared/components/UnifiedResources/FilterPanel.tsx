@@ -32,9 +32,13 @@ import {
   ArrowsIn,
   ArrowsOut,
 } from 'design/Icon';
+import { Danger } from 'design/Alert';
+import useStickyClusterId from 'teleport/useStickyClusterId';
 
 import { ViewMode } from 'shared/services/unifiedResourcePreferences';
 import { HoverTooltip } from 'shared/components/ToolTip';
+
+import { ClusterDropdown } from '../ClusterDropdown/ClusterDropdown';
 
 import { FilterKind } from './UnifiedResources';
 import { SharedUnifiedResource, UnifiedResourcesQueryParams } from './types';
@@ -81,6 +85,8 @@ export function FilterPanel({
   hideViewModeOptions,
 }: FilterPanelProps) {
   const { sort, kinds } = params;
+  const { clusterId } = useStickyClusterId();
+  const [errorMessage, setErrorMessage] = useState('');
 
   const activeSortFieldOption = sortFieldOptions.find(
     opt => opt.value === sort.fieldName
@@ -100,69 +106,73 @@ export function FilterPanel({
 
   return (
     // minHeight is set to 32px so there isn't layout shift when a bulk action button shows up
-    <Flex
-      mb={2}
-      justifyContent="space-between"
-      minHeight="32px"
-      alignItems="center"
-    >
-      <Flex gap={2}>
-        <HoverTooltip tipContent={selected ? 'Deselect all' : 'Select all'}>
-          <StyledCheckbox
-            checked={selected}
-            onChange={selectVisible}
-            data-testid="select_all"
-          />
-        </HoverTooltip>
-
-        <FilterTypesMenu
-          onChange={onKindsChanged}
-          availableKinds={availableKinds}
-          kindsFromParams={kinds || []}
-        />
-      </Flex>
-      <Flex gap={2} alignItems="center">
-        <Flex mr={1}>{BulkActions}</Flex>
-        {!hideViewModeOptions && (
-          <>
-            {currentViewMode === ViewMode.VIEW_MODE_LIST && (
-              <ButtonBorder
-                size="small"
-                css={`
-                  border: none;
-                  color: ${props => props.theme.colors.text.slightlyMuted};
-                  text-transform: none;
-                  padding-left: ${props => props.theme.space[2]}px;
-                  padding-right: ${props => props.theme.space[2]}px;
-                  height: 22px;
-                  font-size: 12px;
-                `}
-                onClick={() => setExpandAllLabels(!expandAllLabels)}
-              >
-                <Flex alignItems="center" width="100%">
-                  {expandAllLabels ? (
-                    <ArrowsIn size="small" mr={1} />
-                  ) : (
-                    <ArrowsOut size="small" mr={1} />
-                  )}
-                  {expandAllLabels ? 'Collapse ' : 'Expand '} All Labels
-                </Flex>
-              </ButtonBorder>
-            )}
-            <ViewModeSwitch
-              currentViewMode={currentViewMode}
-              setCurrentViewMode={setCurrentViewMode}
+    <>
+      {errorMessage !== '' && <Danger>{errorMessage}</Danger>}
+      <Flex
+        mb={2}
+        justifyContent="space-between"
+        minHeight="32px"
+        alignItems="center"
+      >
+        <Flex gap={2}>
+          <HoverTooltip tipContent={selected ? 'Deselect all' : 'Select all'}>
+            <StyledCheckbox
+              checked={selected}
+              onChange={selectVisible}
+              data-testid="select_all"
             />
-          </>
-        )}
-        <SortMenu
-          onDirChange={onSortOrderButtonClicked}
-          onChange={onSortFieldChange}
-          sortType={activeSortFieldOption.label}
-          sortDir={sort.dir}
-        />
+          </HoverTooltip>
+
+          <FilterTypesMenu
+            onChange={onKindsChanged}
+            availableKinds={availableKinds}
+            kindsFromParams={kinds || []}
+          />
+          <ClusterDropdown value={clusterId} onError={setErrorMessage} />
+        </Flex>
+        <Flex gap={2} alignItems="center">
+          <Flex mr={1}>{BulkActions}</Flex>
+          {!hideViewModeOptions && (
+            <>
+              {currentViewMode === ViewMode.VIEW_MODE_LIST && (
+                <ButtonBorder
+                  size="small"
+                  css={`
+                    border: none;
+                    color: ${props => props.theme.colors.text.slightlyMuted};
+                    text-transform: none;
+                    padding-left: ${props => props.theme.space[2]}px;
+                    padding-right: ${props => props.theme.space[2]}px;
+                    height: 22px;
+                    font-size: 12px;
+                  `}
+                  onClick={() => setExpandAllLabels(!expandAllLabels)}
+                >
+                  <Flex alignItems="center" width="100%">
+                    {expandAllLabels ? (
+                      <ArrowsIn size="small" mr={1} />
+                    ) : (
+                      <ArrowsOut size="small" mr={1} />
+                    )}
+                    {expandAllLabels ? 'Collapse ' : 'Expand '} All Labels
+                  </Flex>
+                </ButtonBorder>
+              )}
+              <ViewModeSwitch
+                currentViewMode={currentViewMode}
+                setCurrentViewMode={setCurrentViewMode}
+              />
+            </>
+          )}
+          <SortMenu
+            onDirChange={onSortOrderButtonClicked}
+            onChange={onSortFieldChange}
+            sortType={activeSortFieldOption.label}
+            sortDir={sort.dir}
+          />
+        </Flex>
       </Flex>
-    </Flex>
+    </>
   );
 }
 

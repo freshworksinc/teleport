@@ -16,9 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Indicator } from 'design';
 import { Danger } from 'design/Alert';
+import { ClusterDropdown } from 'shared/components/ClusterDropdown/ClusterDropdown';
 
 import {
   FeatureBox,
@@ -26,11 +27,8 @@ import {
   FeatureHeaderTitle,
 } from 'teleport/components/Layout';
 import useTeleport from 'teleport/useTeleport';
-
 import useStickerClusterId from 'teleport/useStickyClusterId';
-
 import { ButtonLockedFeature } from 'teleport/components/ButtonLockedFeature';
-
 import { CtaEvent } from 'teleport/services/userEvent';
 
 import SessionList from './SessionList';
@@ -44,8 +42,15 @@ export default function Container() {
 }
 
 export function Sessions(props: ReturnType<typeof useSessions>) {
-  const { attempt, sessions, showActiveSessionsCTA, showModeratedSessionsCTA } =
-    props;
+  const {
+    attempt,
+    sessions,
+    showActiveSessionsCTA,
+    showModeratedSessionsCTA,
+    clusterId,
+  } = props;
+  const [errorMessage, setErrorMessage] = useState('');
+
   return (
     <FeatureBox>
       <FeatureHeader
@@ -78,6 +83,12 @@ export function Sessions(props: ReturnType<typeof useSessions>) {
       {attempt.isProcessing && (
         <Box textAlign="center" m={10}>
           <Indicator />
+        </Box>
+      )}
+      {errorMessage !== '' && <Danger>{errorMessage}</Danger>}
+      {errorMessage === '' && (
+        <Box mb={4}>
+          <ClusterDropdown value={clusterId} onError={setErrorMessage} />
         </Box>
       )}
       {attempt.isSuccess && (
