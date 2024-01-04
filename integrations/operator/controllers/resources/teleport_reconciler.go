@@ -232,14 +232,17 @@ func (r TeleportResourceReconciler[T, K]) SetupWithManager(mgr ctrl.Manager) err
 // gvkFromScheme looks up the GVK from the a runtime scheme.
 // The structured type must have been registered before in the scheme. This function is used when you have a structured
 // type, a scheme containing this structured type, and want to build an unstructured object for the same GVK.
-// The TeleportResourceReconciler unpacks in unstructured types first, thenm
 func gvkFromScheme[T TeleportResource, K TeleportKubernetesResource[T]](scheme *runtime.Scheme) (schema.GroupVersionKind, error) {
 	structuredObj := newKubeResource[T, K]()
 	gvks, _, err := scheme.ObjectKinds(structuredObj)
 	if err != nil {
 		return schema.GroupVersionKind{}, trace.Wrap(err, "looking up gvk in scheme for type %T", structuredObj)
 	}
-	// Change this when we'll add multi version support
+	if len(gvks) != 1 {
+		return schema.GroupVersionKind{}, trace.CompareFailed(
+			"failed GVK lookup in scheme, looked up %T and got %d matches, expected 1", structuredObj, len(gvks),
+		)
+	}
 	return gvks[0], nil
 }
 
