@@ -484,6 +484,17 @@ value with a `random_string` resource:
 When we apply the `teleport_provision_token` resources, the Teleport Terraform
 provider creates them on the Teleport Auth Service backend. 
 
+### User data script
+
+Each Teleport agent deployed by the `agent-pool-terraform` module loads a user
+data script that creates a Teleport configuration file for the agent. The
+services enabled by the configuration file depend on the value of the
+`agent_roles` input variable:
+
+```text
+(!examples/agent-pool-terraform/teleport/userdata!)
+```
+
 ### Virtual machine instances
 
 Each cloud-specific module declares resources to deploy a virtual machine
