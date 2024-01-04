@@ -238,8 +238,6 @@ Teleport cluster and cloud provider.
 In your project directory, create a file called `providers.tf` with the
 following content:
 
-{/* TODO: Add instructions to update placeholder values*/}
-
 <Tabs>
 <TabItem label="AWS">
 
@@ -271,15 +269,13 @@ provider "teleport" {
 
 Replace the following placeholders:
 
-|Placeholder|Value|
-|---|---|
-|AWS_REGION|The AWS region where you will deploy agents, e.g., `us-east-2`|
-|PROXY_SERVICE_ADDRESS|The host and port of the Teleport Proxy Service, e.g., `example.teleport.sh`|
+| Placeholder           | Value                                                                        |
+|-----------------------|------------------------------------------------------------------------------|
+| AWS_REGION            | The AWS region where you will deploy agents, e.g., `us-east-2`               |
+| PROXY_SERVICE_ADDRESS | The host and port of the Teleport Proxy Service, e.g., `example.teleport.sh` |
 
 </TabItem>
 <TabItem label="Google Cloud">
-
-{/* TODO: Resume editing here*/}
 
 ```hcl
 terraform {
@@ -308,6 +304,16 @@ provider "teleport" {
   identity_file_path = "terraform-identity"
 }
 ```
+
+Replace the following placeholders:
+
+| Placeholder           | Value                                                                        |
+|-----------------------|------------------------------------------------------------------------------|
+| GOOGLE_CLOUD_REGION | Google Cloud region where you will deploy agents. |
+| GOOGLE_CLOUD_PROJECT| Google Cloud project where you will deploy agents. |
+| PROXY_SERVICE_ADDRESS | The host and port of the Teleport Proxy Service, e.g., `example.teleport.sh` |
+
+
 </TabItem>
 <TabItem label="Azure">
 
@@ -336,28 +342,38 @@ provider "azurerm" {
   features {}
 }
 ```
+
+Replace the following placeholders:
+
+|Placeholder|Value|
+|---|---|
+|PROXY_SERVICE_ADDRESS|The host and port of the Teleport Proxy Service, e.g., `example.teleport.sh`|
+
 </TabItem>
 </Tabs>
 
 ## Step 3/4. Edit the agent configuration
 
-Each virtual machine launched by the module runs a script on startup This script
+Each virtual machine launched by the module runs a script on startup that
 installs Teleport on the host, then writes a configuration file to the default
-location, `/etc/teleport.yaml`. The configuration file enables each Teleport
-service we associated with our token.
+location, `/etc/teleport.yaml`. 
 
-If the `agent_roles` input variable includes the `Node` role, the configuration
-also adds the `role: agent-pool` label to the Teleport SSH Service on each
-instance. This makes it easier to access hosts in the agent pool later.
+The configuration file enables each Teleport service you associate with the join
+token using the `agent_roles` input variable. For example, if the value of
+`agent_roles` is `["Node", "Db"]`, the configuration file enables the Teleport
+SSH Service and Teleport Database Service.
+
+If the value of the `agent_roles` input variable includes the `Node` role, the
+configuration also adds the `role: agent-pool` label to the Teleport SSH Service
+on each instance. This makes it easier to access hosts in the agent pool later.
 
 Finally, the script restarts Teleport on the host to apply the new
 configuration.
 
 In the default configuration, only the Teleport SSH Service is enabled.
 
-The cloud-init script run by each VM makes Teleport the only option for
-accessing agent instances by disabling OpenSSH on startup and deleting any
-authorized public keys.
+The script makes Teleport the only option for accessing agent instances by
+disabling OpenSSH on startup and deleting any authorized public keys.
 
 ## Step 4/4. Verify the deployment
 
@@ -371,8 +387,10 @@ $ terraform init
 $ terraform apply
 ```
 
-Once the `apply` command completes, run the following command to verify that the
-two agents have deployed successfully:
+Once the `apply` command completes, run the following command to verify that
+your agents have deployed successfully. This command, which assumes that the
+agents have the `Node` role, lists all Teleport SSH Service instances with the
+`role=agent-pool` label:
 
 ```code
 $ tsh ls role=agent-pool
@@ -384,8 +402,8 @@ ip-10-1-1-24.ec2.internal  ⟵ Tunnel   role=agent-pool
 
 ## Next step: Enroll infrastructure resources
 
-There are two ways to configure your agent pool to protect infrastructure
-resources with Teleport, which we describe below.
+In this section, we describe the two ways to configure your agent pool to
+protect infrastructure resources with Teleport.
 
 ### Define dynamic resources in Terraform 
 
@@ -472,12 +490,12 @@ To see how to configure each service, read its section of the documentation:
 
 ## Further reading: How the module works
 
-In this section, we explain the resources configured in the Terraform module
-that you imported earlier.
+In this section, we explain the resources configured in the
+`agent-pool-terraform` module.
 
 ### Join token
 
-In this minimal example, we deploy one virtual machine instance for each
+The `agent-pool-terraform` module deploys one virtual machine instance for each
 Teleport agent. Each agent joins the cluster using a token. We create each token
 using the `teleport_provision_token` Terraform resource, specifying the token's
 value with a `random_string` resource:
@@ -502,8 +520,8 @@ services enabled by the configuration file depend on the value of the
 
 ### Virtual machine instances
 
-Each cloud-specific module declares resources to deploy a virtual machine
-instance on your cloud provider:
+Each cloud-specific child module of `agent-pool-terraform` declares resources to
+deploy a virtual machine instance on your cloud provider:
 
 <Tabs>
 <TabItem label="AWS">
