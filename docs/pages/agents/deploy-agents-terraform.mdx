@@ -49,8 +49,8 @@ a demo cluster using:
     - Google Cloud NAT
     - Azure NAT Gateway
 
-  For demo purposes, you can also configure the VM instances you deploy to have
-  public IP addresses, and we will show you how to do so in this guide.
+  In minimum-security demo clusters, you can also configure the VM instances you
+  deploy to have public IP addresses.
 
 - Terraform v(=terraform.version=) or higher.
 
@@ -67,7 +67,7 @@ a demo cluster using:
    Terraform module.
 
 1. Move the identity file for the Teleport Terraform provider into your project
-   directory so the Terraform provider an access it. Name the file
+   directory so the Terraform provider can access it. Name the file
    `terraform-identity`.
    
    <Notice type="warning">
@@ -77,7 +77,8 @@ a demo cluster using:
    
    </Notice>
 
-1. Create a file called `main.tf` with the following content: 
+1. Create a file called `main.tf` with the following content, which imports the
+   `agent-pool-terraform` module for your cloud provider:
 
 <Tabs>
 <TabItem label="AWS">
@@ -137,10 +138,12 @@ module "teleport" {
 Edit  the `module` block in `main.tf` as follows:
 
 1. Assign `agent_count` to `2` for high availability. As you scale your Teleport
-   usage, you can increase this count to ease the load on each agent. You can
-   consider adding your agents to an Auto Scaling group as well.
+   usage, you can increase this count to ease the load on each agent. 
 
-1. Assign a value to `agent_roles`. 
+   You can consider adding your agents to an auto-scaling group as well, though
+   this will require copying and modifying the `agent-pool-terraform` module.
+
+1. Modify the elements of the `agent_roles` list.
 
    The Teleport Auth Service associates the join token with one or more roles,
    identifying the Teleport services that are allowed to use the token. Modify
@@ -154,6 +157,9 @@ Edit  the `module` block in `main.tf` as follows:
    | `Db`        | Teleport Database Service    |
    | `Kube`      | Teleport Kubernetes Service  |
    | `Node`      | Teleport SSH Service         |
+
+   The values of `agent_roles` also determine which Teleport services each agent
+   deployed by the module will run.
 
 1. Assign `proxy_service_address` to the host and HTTPS port of your Teleport
    Proxy Service, e.g., `mytenant.teleport.sh:443`.
@@ -181,7 +187,7 @@ Edit  the `module` block in `main.tf` as follows:
    insecure_direct_access=true
    ```
 
-Assign the remaining input variables depending on your cloud provider:
+1. Assign the remaining input variables depending on your cloud provider:
 
 <Tabs>
 <TabItem label="AWS">
@@ -242,7 +248,7 @@ terraform {
   required_providers {
     teleport = {
       source  = "terraform.releases.teleport.dev/gravitational/teleport"
-      version = "TELEPORT_VERSION"
+      version = "(=teleport.plugin.version=)"
     }
 
     aws = {
@@ -253,7 +259,7 @@ terraform {
 }
 
 provider "aws" {
-  region = var.region
+  region = AWS_REGION
 }
 
 provider "teleport" {
@@ -263,15 +269,24 @@ provider "teleport" {
 }
 ```
 
+Replace the following placeholders:
+
+|Placeholder|Value|
+|---|---|
+|AWS_REGION|The AWS region where you will deploy agents, e.g., `us-east-2`|
+|PROXY_SERVICE_ADDRESS|The host and port of the Teleport Proxy Service, e.g., `example.teleport.sh`|
+
 </TabItem>
 <TabItem label="Google Cloud">
+
+{/* TODO: Resume editing here*/}
 
 ```hcl
 terraform {
   required_providers {
     teleport = {
       source  = "terraform.releases.teleport.dev/gravitational/teleport"
-      version = "TELEPORT_VERSION"
+      version = "(=teleport.plugin.version=)"
     }
 
     google = {
@@ -301,7 +316,7 @@ terraform {
   required_providers {
     teleport = {
       source  = "terraform.releases.teleport.dev/gravitational/teleport"
-      version = "TELEPORT_VERSION"
+      version = "(=teleport.plugin.version=)"
     }
 
     azurerm = {
@@ -323,16 +338,6 @@ provider "azurerm" {
 ```
 </TabItem>
 </Tabs>
-
-1. Make sure you are using the latest supported version of the Teleport
-   Terraform provider. In `providers.tf`, we configure the Terraform
-   provider version with a placeholder value, `TELEPORT_VERSION`.
-
-   Replace the placeholder value with the latest version:
-   
-   ```code
-   $ sed -i "" "s/TELEPORT_VERSION/(=teleport.plugin.version=)/" providers-azure.tf
-   ```
 
 ## Step 3/4. Edit the agent configuration
 
