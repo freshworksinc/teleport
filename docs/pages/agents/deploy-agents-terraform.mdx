@@ -87,7 +87,7 @@ a demo cluster using:
 module "teleport" {
     agent_count=2
     agent_roles=["Node"]
-    proxy_service_address="mytenant.teleport.sh"
+    proxy_service_address="mytenant.teleport.sh:443"
     region=""
     source="github.com/gravitational/teleport/examples/agent-pool-terraform/aws"
     subnet_id=""
@@ -105,7 +105,7 @@ module "teleport" {
     agent_roles=["Node"]
     gcp_zone=""
     google_project=""
-    proxy_service_address="mytenant.teleport.sh"
+    proxy_service_address="mytenant.teleport.sh:443"
     region=""
     source="github.com/gravitational/teleport/examples/agent-pool-terraform/aws"
     subnet_id=""
@@ -122,7 +122,7 @@ module "teleport" {
     agent_count=2
     agent_roles=["Node"]
     azure_resource_group=""
-    proxy_service_address="mytenant.teleport.sh"
+    proxy_service_address="mytenant.teleport.sh:443"
     public_key_path=""
     region=""
     source="github.com/gravitational/teleport/examples/agent-pool-terraform/aws"
@@ -178,10 +178,10 @@ Edit  the `module` block in `main.tf` as follows:
    `oss`, `cloud`, `enterprise`, or `team`. The default is `oss`.
 
 
-1. If you are deploying your instance in a demo environment and do not have a
-   NAT gateway, NAT instance, or other method for connecting your instances to
-   the Teleport Proxy Service, modify the `module` block to associate a
-   public IP address with each agent instance: 
+1. If you are deploying your instance in a minimum-security demo environment and
+   do not have a NAT gateway, NAT instance, or other method for connecting your
+   instances to the Teleport Proxy Service, modify the `module` block to
+   associate a public IP address with each agent instance: 
 
    ```hcl
    insecure_direct_access=true
@@ -272,7 +272,7 @@ Replace the following placeholders:
 | Placeholder           | Value                                                                        |
 |-----------------------|------------------------------------------------------------------------------|
 | AWS_REGION            | The AWS region where you will deploy agents, e.g., `us-east-2`               |
-| PROXY_SERVICE_ADDRESS | The host and port of the Teleport Proxy Service, e.g., `example.teleport.sh` |
+| PROXY_SERVICE_ADDRESS | The host and port of the Teleport Proxy Service, e.g., `example.teleport.sh:443` |
 
 </TabItem>
 <TabItem label="Google Cloud">
@@ -311,7 +311,7 @@ Replace the following placeholders:
 |-----------------------|------------------------------------------------------------------------------|
 | GOOGLE_CLOUD_REGION | Google Cloud region where you will deploy agents. |
 | GOOGLE_CLOUD_PROJECT| Google Cloud project where you will deploy agents. |
-| PROXY_SERVICE_ADDRESS | The host and port of the Teleport Proxy Service, e.g., `example.teleport.sh` |
+| PROXY_SERVICE_ADDRESS | The host and port of the Teleport Proxy Service, e.g., `example.teleport.sh:443` |
 
 
 </TabItem>
@@ -347,12 +347,14 @@ Replace the following placeholders:
 
 |Placeholder|Value|
 |---|---|
-|PROXY_SERVICE_ADDRESS|The host and port of the Teleport Proxy Service, e.g., `example.teleport.sh`|
+| PROXY_SERVICE_ADDRESS | The host and port of the Teleport Proxy Service, e.g., `example.teleport.sh:443` |
 
 </TabItem>
 </Tabs>
 
 ## Step 3/4. Edit the agent configuration
+
+{/*TODO: merge this with the part that introduces agent_roles*/}
 
 Each virtual machine launched by the module runs a script on startup that
 installs Teleport on the host, then writes a configuration file to the default
