@@ -3319,5 +3319,5 @@ func TestDefaultCAFiltering(t *testing.T) {
 			found++
 		}
 	}
-	require.Equal(t, found, 1)
+	require.Equal(t, 1, found)
 }
