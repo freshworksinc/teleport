@@ -267,6 +267,20 @@ following content:
 <TabItem label="AWS">
 
 ```hcl
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
+    }
+
+    teleport = {
+      source  = "terraform.releases.teleport.dev/gravitational/teleport"
+      version = "(=teleport.plugin.version=)"
+    }
+  }
+}
+
 provider "aws" {
   region = AWS_REGION
 }
@@ -287,8 +301,21 @@ Replace the following placeholders:
 
 </TabItem>
 <TabItem label="Google Cloud">
-
 ```hcl
+terraform {
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 5.5.0"
+    }
+
+    teleport = {
+      source  = "terraform.releases.teleport.dev/gravitational/teleport"
+      version = "(=teleport.plugin.version=)"
+    }
+  }
+}
+
 provider "google" {
   project = GOOGLE_CLOUD_REGION
   region  = GOOGLE_CLOUD_PROJECT
@@ -312,8 +339,21 @@ Replace the following placeholders:
 
 </TabItem>
 <TabItem label="Azure">
-
 ```hcl
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0.0"
+    }
+
+    teleport = {
+      source  = "terraform.releases.teleport.dev/gravitational/teleport"
+      version = "(=teleport.plugin.version=)"
+    }
+  }
+}
+
 provider "teleport" {
   identity_file_path = "terraform-identity"
   # Update addr to point to your Teleport Cloud tenant URL's host:port
