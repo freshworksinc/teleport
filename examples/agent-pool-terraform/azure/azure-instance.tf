@@ -3,7 +3,7 @@ locals {
 }
 
 resource "azurerm_network_interface" "teleport_agent" {
-  count               = var.cloud == "azure" ? var.agent_count : 0
+  count               = var.agent_count
   name                = "teleport-agent-ni-${count.index}"
   location            = var.region
   resource_group_name = var.azure_resource_group

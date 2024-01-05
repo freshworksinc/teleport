@@ -1,7 +1,14 @@
+variable "agent_count" {
+  type        = number
+  description = "Number of agents to deploy"
+}
+
 // The root module performs validation and sets defaults.
 variable "agent_roles" {
   type = list(string)
+  description = "The roles that the agent is allowed to have."
 }
+
 
 variable "proxy_service_address" {
   type        = string
@@ -16,11 +23,6 @@ variable "teleport_edition" {
     condition     = contains(["oss", "enterprise", "team", "cloud"], var.teleport_edition)
     error_message = "teleport_edition must be one of: oss, enterprise, team, cloud."
   }
-}
-
-variable "teleport_plugin_version" {
-  type        = string
-  description = "version of the Teleport Terraform provider to use"
 }
 
 variable "teleport_version" {
