@@ -32,6 +32,7 @@ require (
 )
 
 require (
+	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/beevik/etree v1.1.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
