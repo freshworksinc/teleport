@@ -23,7 +23,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/gravitational/trace"
 	"golang.org/x/mod/semver"
@@ -185,20 +184,17 @@ func (c *Channel) GetCritical(ctx context.Context) (bool, error) {
 // or in other Teleport process such as integration services deploying and
 // updating teleport agents.
 func NewDefaultChannel() (*Channel, error) {
-	return sync.OnceValues[*Channel, error](
-		func() (*Channel, error) {
-			forwardURL := GetChannel()
-			if forwardURL == "" {
-				forwardURL = stableCloudVersionBaseURL
-			}
-			defaultChannel := &Channel{
-				ForwardURL: forwardURL,
-			}
-			if err := defaultChannel.CheckAndSetDefaults(); err != nil {
-				return nil, trace.Wrap(err)
-			}
-			return defaultChannel, nil
-		})()
+	forwardURL := GetChannel()
+	if forwardURL == "" {
+		forwardURL = stableCloudVersionBaseURL
+	}
+	defaultChannel := &Channel{
+		ForwardURL: forwardURL,
+	}
+	if err := defaultChannel.CheckAndSetDefaults(); err != nil {
+		return nil, trace.Wrap(err)
+	}
+	return defaultChannel, nil
 }
 
 func parseMajorFromVersionString(v string) (int, error) {
