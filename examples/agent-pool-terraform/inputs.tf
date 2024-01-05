@@ -97,18 +97,3 @@ variable "teleport_version" {
   type        = string
   description = "Version of Teleport to install on each agent"
 }
-
-variable "subnet_id" {
-  type        = string
-  description = "Cloud provider subnet for deploying Teleport agents (subnet ID if using AWS or Azure, name or self link if using GCP)"
-}
-
-variable "teleport_plugin_version" {
-  type        = string
-  description = "version of the Teleport Terraform provider to use"
-}
-
-variable "teleport_version" {
-  type        = string
-  description = "Version of Teleport to install on each agent"
-}

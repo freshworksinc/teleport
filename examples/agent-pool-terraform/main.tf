@@ -1,5 +1,5 @@
 module "teleport" {
-  source                = "../teleport"
+  source                = "./teleport"
   proxy_service_address = var.proxy_service_address
   teleport_edition      = var.teleport_edition
   teleport_version      = var.teleport_version
@@ -11,7 +11,7 @@ module "aws" {
   agent_roles             = var.agent_roles
   proxy_service_address   = var.proxy_service_address
   region                  = var.region
-  source                  = var.source
+  source                  = "./aws"
   subnet_id               = var.subnet_id
   teleport_edition        = var.teleport_edition
   teleport_plugin_version = var.teleport_plugin_version
@@ -27,7 +27,7 @@ module "gcp" {
   google_project          = var.google_project
   proxy_service_address   = var.proxy_service_address
   region                  = var.region
-  source                  = var.source
+  source                  = "./gcp"
   subnet_id               = var.subnet_id
   teleport_edition        = var.teleport_edition
   teleport_plugin_version = var.teleport_plugin_version
@@ -43,7 +43,7 @@ module "azure" {
   proxy_service_address   = var.proxy_service_address
   public_key_path         = var.public_key_path
   region                  = var.region
-  source                  = var.source
+  source                  = "./azure"
   subnet_id               = var.subnet_id
   teleport_edition        = var.teleport_edition
   teleport_plugin_version = var.teleport_plugin_version
