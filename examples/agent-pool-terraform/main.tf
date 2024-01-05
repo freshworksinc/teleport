@@ -14,7 +14,6 @@ module "aws" {
   source                  = "./aws"
   subnet_id               = var.subnet_id
   teleport_edition        = var.teleport_edition
-  teleport_plugin_version = var.teleport_plugin_version
   teleport_version        = var.teleport_version
   userdata                = module.teleport.userdata
 }
@@ -30,7 +29,6 @@ module "gcp" {
   source                  = "./gcp"
   subnet_id               = var.subnet_id
   teleport_edition        = var.teleport_edition
-  teleport_plugin_version = var.teleport_plugin_version
   teleport_version        = var.teleport_version
   userdata                = module.teleport.userdata
 }
@@ -46,7 +44,6 @@ module "azure" {
   source                  = "./azure"
   subnet_id               = var.subnet_id
   teleport_edition        = var.teleport_edition
-  teleport_plugin_version = var.teleport_plugin_version
   teleport_version        = var.teleport_version
   userdata                = module.teleport.userdata
 }

@@ -39,11 +39,6 @@ variable "teleport_edition" {
   }
 }
 
-variable "teleport_plugin_version" {
-  type        = string
-  description = "version of the Teleport Terraform provider to use"
-}
-
 variable "teleport_version" {
   type        = string
   description = "Version of Teleport to install on each agent"
