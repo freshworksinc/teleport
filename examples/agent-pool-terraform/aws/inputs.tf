@@ -3,7 +3,7 @@ variable "agent_count" {
   description = "Number of agents to deploy"
 }
 
-// The teleport module performs validation and sets defaults.
+// The root module performs validation and sets defaults.
 variable "agent_roles" {
   type = list(string)
 }

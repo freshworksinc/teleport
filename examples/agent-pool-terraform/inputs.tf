@@ -3,15 +3,52 @@ variable "azure_resource_group" {
   default     = ""
   description = "Azure location in which to deploy agents"
 }
-
 variable "agent_count" {
   type        = number
   description = "Number of agents to deploy"
 }
 
-// The root module performs validation and sets defaults.
 variable "agent_roles" {
-  type = list(string)
+  type        = list(string)
+  description = "The roles that the agent is allowed to have."
+  default     = ["Node"]
+  validation {
+    condition = length(setsubtract(var.agent_roles, [
+      "App",
+      "Db",
+      "Discovery",
+      "Kube",
+      "Node",
+    ])) == 0
+    error_message = "agent_roles must be one or more of ${join(", ", [
+      "App",
+      "Db",
+      "Discovery",
+      "Kube",
+      "Node",
+    ])}"
+  }
+}
+
+variable "cloud" {
+  type        = string
+  description = "Cloud provider for launching agents. Must be \"aws\", \"gcp\", or \"azure\""
+  validation {
+    condition     = contains(["aws", "azure", "gcp"], var.cloud)
+    error_message = "cloud must be \"aws\", \"gcp\", or \"azure\""
+  }
+}
+
+variable "google_project" {
+  type        = string
+  default     = ""
+  description = "GCP project to associate agents with"
+}
+
+variable "gcp_zone" {
+  type        = string
+  default     = ""
+  description = "GCP zone to associate agents with"
 }
 
 variable "insecure_direct_access" {
@@ -49,6 +86,21 @@ variable "teleport_edition" {
     condition     = contains(["oss", "enterprise", "team", "cloud"], var.teleport_edition)
     error_message = "teleport_edition must be one of: oss, enterprise, team, cloud."
   }
+}
+
+variable "teleport_plugin_version" {
+  type        = string
+  description = "version of the Teleport Terraform provider to use"
+}
+
+variable "teleport_version" {
+  type        = string
+  description = "Version of Teleport to install on each agent"
+}
+
+variable "subnet_id" {
+  type        = string
+  description = "Cloud provider subnet for deploying Teleport agents (subnet ID if using AWS or Azure, name or self link if using GCP)"
 }
 
 variable "teleport_plugin_version" {
