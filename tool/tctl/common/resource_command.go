@@ -437,8 +437,11 @@ func (rc *ResourceCommand) createRole(ctx context.Context, client auth.ClientI, 
 		// check for syntax errors in predicates
 		return trace.Wrap(err)
 	}
-	if err := services.CheckDynamicLabelsInDenyRules(role); err != nil {
+	err = services.CheckDynamicLabelsInDenyRules(role)
+	if trace.IsBadParameter(err) {
 		return trace.BadParameter(dynamicLabelWarningMessage(role))
+	} else if err != nil {
+		return trace.Wrap(err)
 	}
 
 	warnAboutKubernetesResources(rc.config.Log, role)
@@ -510,8 +513,11 @@ func dynamicLabelWarningMessage(r types.Role) string {
 func warnAboutDynamicLabelsInDenyRule(logger utils.Logger, r types.Role) {
 	if err := services.CheckDynamicLabelsInDenyRules(r); err == nil {
 		return
+	} else if trace.IsBadParameter(err) {
+		logger.Warningf(dynamicLabelWarningMessage(r))
+	} else {
+		logger.WithError(err).Warningf("error checking deny rules labels")
 	}
-	logger.Warningf(dynamicLabelWarningMessage(r))
 }
 
 // createUser implements `tctl create user.yaml` command.

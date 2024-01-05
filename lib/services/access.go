@@ -68,18 +68,18 @@ type Access interface {
 // labels prefixed with "dynamic/".
 func CheckDynamicLabelsInDenyRules(r types.Role) error {
 	errorMessage := fmt.Sprintf("labels with %q prefix are not allowed in deny rules", types.TeleportDynamicLabelPrefix)
-	for _, labels := range []types.Labels{
-		r.GetNodeLabels(types.Deny),
-		r.GetAppLabels(types.Deny),
-		r.GetKubernetesLabels(types.Deny),
-		r.GetDatabaseLabels(types.Deny),
-		r.GetWindowsDesktopLabels(types.Deny),
-		r.GetGroupLabels(types.Deny),
-	} {
-		for label := range labels {
+	for _, kind := range types.LabelMatcherKinds {
+		labelMatchers, err := r.GetLabelMatchers(types.Deny, kind)
+		if err != nil {
+			return trace.Wrap(err)
+		}
+		for label := range labelMatchers.Labels {
 			if strings.HasPrefix(label, types.TeleportDynamicLabelPrefix) {
 				return trace.BadParameter(errorMessage)
 			}
+		}
+		if strings.Contains(labelMatchers.Expression, `"`+types.TeleportDynamicLabelPrefix) {
+			return trace.BadParameter(errorMessage)
 		}
 	}
 

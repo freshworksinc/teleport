@@ -4947,9 +4947,14 @@ func (a *Server) syncDynamicLabelsAlert(ctx context.Context) {
 	}
 	var rolesWithDynamicDenyLabels bool
 	for _, role := range roles {
-		if err := services.CheckDynamicLabelsInDenyRules(role); err != nil {
+		err := services.CheckDynamicLabelsInDenyRules(role)
+		if trace.IsBadParameter(err) {
 			rolesWithDynamicDenyLabels = true
 			break
+		}
+		if err != nil {
+			log.Warnf("Error checking labels in role %s: %v", role.GetName(), err)
+			continue
 		}
 	}
 	if !rolesWithDynamicDenyLabels {
