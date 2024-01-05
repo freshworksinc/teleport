@@ -1,20 +1,22 @@
-locals {
-  all_roles = [
-    "App",
-    "Db",
-    "Discovery",
-    "Kube",
-    "Node",
-  ]
-}
-
 variable "agent_roles" {
   type        = list(string)
   description = "The roles that the agent is allowed to have."
   default     = ["Node"]
   validation {
-    condition     = length(setsubtract(var.agent_roles, local.all_roles)) == 0
-    error_message = "agent_roles must be one or more of ${join(", ", local.all_roles)}"
+    condition = length(setsubtract(var.agent_roles, [
+      "App",
+      "Db",
+      "Discovery",
+      "Kube",
+      "Node",
+    ])) == 0
+    error_message = "agent_roles must be one or more of ${join(", ", [
+      "App",
+      "Db",
+      "Discovery",
+      "Kube",
+      "Node",
+    ])}"
   }
 }
 
