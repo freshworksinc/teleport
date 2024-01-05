@@ -1,10 +1,3 @@
-module "teleport" {
-  source                = "../teleport"
-  proxy_service_address = var.proxy_service_address
-  teleport_edition      = var.teleport_edition
-  teleport_version      = var.teleport_version
-}
-
 data "aws_ami" "amazon_linux_2023" {
   most_recent = true
 
@@ -34,7 +27,7 @@ resource "aws_instance" "teleport_agent" {
   ami                         = data.aws_ami.amazon_linux_2023.id
   instance_type               = "t3.small"
   subnet_id                   = var.subnet_id
-  user_data                   = module.teleport.userdata
+  user_data                   = var.userdata
   associate_public_ip_address = var.insecure_direct_access
 
   // Adheres to security best practices

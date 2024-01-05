@@ -1,3 +1,10 @@
+module "teleport" {
+  source                = "../teleport"
+  proxy_service_address = var.proxy_service_address
+  teleport_edition      = var.teleport_edition
+  teleport_version      = var.teleport_version
+}
+
 module "aws" {
   count                   = var.cloud == "aws" ? 1 : 0
   agent_count             = var.agent_count
@@ -9,6 +16,7 @@ module "aws" {
   teleport_edition        = var.teleport_edition
   teleport_plugin_version = var.teleport_plugin_version
   teleport_version        = var.teleport_version
+  userdata                = module.teleport.userdata
 }
 
 module "gcp" {
@@ -24,6 +32,7 @@ module "gcp" {
   teleport_edition        = var.teleport_edition
   teleport_plugin_version = var.teleport_plugin_version
   teleport_version        = var.teleport_version
+  userdata                = module.teleport.userdata
 }
 
 module "azure" {
@@ -39,4 +48,5 @@ module "azure" {
   teleport_edition        = var.teleport_edition
   teleport_plugin_version = var.teleport_plugin_version
   teleport_version        = var.teleport_version
+  userdata                = module.teleport.userdata
 }

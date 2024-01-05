@@ -1,10 +1,3 @@
-module "teleport" {
-  source                = "../teleport"
-  proxy_service_address = var.proxy_service_address
-  teleport_edition      = var.teleport_edition
-  teleport_version      = var.teleport_version
-}
-
 locals {
   username = "admin_temp"
 }
@@ -51,7 +44,7 @@ resource "azurerm_virtual_machine" "teleport_agent" {
   os_profile {
     computer_name  = "teleport-agent-${count.index}"
     admin_username = local.username
-    custom_data    = module.teleport.userdata
+    custom_data    = var.userdata
   }
 
   vm_size = "Standard_B2s"

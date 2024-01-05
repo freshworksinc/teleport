@@ -1,10 +1,3 @@
-module "teleport" {
-  source                = "../teleport"
-  proxy_service_address = var.proxy_service_address
-  teleport_edition      = var.teleport_edition
-  teleport_version      = var.teleport_version
-}
-
 locals {
   // Google Cloud provides public IP addresses to instances when the
   // network_interface block includes an empty access_config, so use a dynamic
@@ -36,5 +29,5 @@ resource "google_compute_instance" "teleport_agent" {
 
   machine_type = "e2-standard-2"
 
-  metadata_startup_script = module.teleport.userdata
+  metadata_startup_script = var.userdata
 }
