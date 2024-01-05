@@ -29,5 +29,5 @@ resource "google_compute_instance" "teleport_agent" {
 
   machine_type = "e2-standard-2"
 
-  metadata_startup_script = var.userdata
+  metadata_startup_script = var.userdata_scripts[count.index]
 }

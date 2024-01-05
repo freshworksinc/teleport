@@ -51,7 +51,7 @@ variable "teleport_version" {
   description = "Version of Teleport to install on each agent"
 }
 
-variable "userdata" {
-  type        = string
-  description = "User data script to provide to VM instances"
+variable "userdata_scripts" {
+  type        = list(string)
+  description = "User data scripts to provide to VM instances"
 }

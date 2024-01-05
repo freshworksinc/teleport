@@ -11,7 +11,7 @@ version: v3
 teleport:
   auth_token: /var/lib/teleport/token
   proxy_server: ${proxy_service_address}
-%{ if contains(var.agent_roles, "App") }
+%{ if contains(agent_roles, "App") }
 app_service:
   enabled: false
   resources:
@@ -20,18 +20,18 @@ app_service:
 %{ endif }
 auth_service:
   enabled: false
-%{ if contains(var.agent_roles, "Db") }
+%{ if contains(agent_roles, "Db") }
 db_service:
   enabled: false
   resources:
   - labels:
       "*": "*"
 %{ endif }
-%{ if contains(var.agent_roles, "Discovery") }
+%{ if contains(agent_roles, "Discovery") }
 discovery_service:
   enabled: false
 %{ endif }
-%{ if contains(var.agent_roles, "Kube") }
+%{ if contains(agent_roles, "Kube") }
 kubernetes_service:
   enabled: false
   resources:
@@ -40,7 +40,7 @@ kubernetes_service:
 %{ endif }
 proxy_service:
   enabled: false
-%{ if contains(var.agent_roles, "Node") }
+%{ if contains(agent_roles, "Node") }
 ssh_service:
   enabled: true
   labels:

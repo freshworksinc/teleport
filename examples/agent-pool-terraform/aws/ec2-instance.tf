@@ -27,7 +27,7 @@ resource "aws_instance" "teleport_agent" {
   ami                         = data.aws_ami.amazon_linux_2023.id
   instance_type               = "t3.small"
   subnet_id                   = var.subnet_id
-  user_data                   = var.userdata
+  user_data                   = var.userdata_scripts[count.index]
   associate_public_ip_address = var.insecure_direct_access
 
   // Adheres to security best practices

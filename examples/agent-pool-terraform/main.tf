@@ -16,7 +16,7 @@ module "aws" {
   subnet_id             = var.subnet_id
   teleport_edition      = var.teleport_edition
   teleport_version      = var.teleport_version
-  userdata              = module.teleport.userdata
+  userdata_scripts      = module.teleport.userdata_scripts
 }
 
 module "gcp" {
@@ -30,7 +30,7 @@ module "gcp" {
   subnet_id             = var.subnet_id
   teleport_edition      = var.teleport_edition
   teleport_version      = var.teleport_version
-  userdata              = module.teleport.userdata
+  userdata_scripts      = module.teleport.userdata_scripts
 }
 
 module "azure" {
@@ -44,5 +44,5 @@ module "azure" {
   subnet_id             = var.subnet_id
   teleport_edition      = var.teleport_edition
   teleport_version      = var.teleport_version
-  userdata              = module.teleport.userdata
+  userdata_scripts      = module.teleport.userdata_scripts
 }

@@ -44,7 +44,7 @@ resource "azurerm_virtual_machine" "teleport_agent" {
   os_profile {
     computer_name  = "teleport-agent-${count.index}"
     admin_username = local.username
-    custom_data    = var.userdata
+    custom_data    = var.userdata_scripts[count.index]
   }
 
   vm_size = "Standard_B2s"
