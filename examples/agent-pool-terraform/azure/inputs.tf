@@ -15,8 +15,8 @@ variable "agent_roles" {
 }
 
 variable "insecure_direct_access" {
-  type = bool
-  default = false
+  type        = bool
+  default     = false
   description = "Whether to enable direct access to agent instances. Only enable this in low-security demo environments."
 }
 
@@ -49,6 +49,11 @@ variable "teleport_edition" {
     condition     = contains(["oss", "enterprise", "team", "cloud"], var.teleport_edition)
     error_message = "teleport_edition must be one of: oss, enterprise, team, cloud."
   }
+}
+
+variable "teleport_plugin_version" {
+  type        = string
+  description = "version of the Teleport Terraform provider to use"
 }
 
 variable "teleport_version" {

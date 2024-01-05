@@ -92,6 +92,7 @@ module "teleport" {
     source="github.com/gravitational/teleport/examples/agent-pool-terraform/aws"
     subnet_id=""
     teleport_edition="oss"
+    teleport_plugin_version="(=teleport.plugin.version=)"
     teleport_version="(=teleport.version=)"
 }
 ```
@@ -110,6 +111,7 @@ module "teleport" {
     source="github.com/gravitational/teleport/examples/agent-pool-terraform/aws"
     subnet_id=""
     teleport_edition="oss"
+    teleport_plugin_version="(=teleport.plugin.version=)"
     teleport_version="(=teleport.version=)"
 }
 ```
@@ -128,6 +130,7 @@ module "teleport" {
     source="github.com/gravitational/teleport/examples/agent-pool-terraform/aws"
     subnet_id=""
     teleport_edition="oss"
+    teleport_plugin_version="(=teleport.plugin.version=)"
     teleport_version="(=teleport.version=)"
 }
 ```
@@ -242,20 +245,6 @@ following content:
 <TabItem label="AWS">
 
 ```hcl
-terraform {
-  required_providers {
-    teleport = {
-      source  = "terraform.releases.teleport.dev/gravitational/teleport"
-      version = "(=teleport.plugin.version=)"
-    }
-
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 4.0"
-    }
-  }
-}
-
 provider "aws" {
   region = AWS_REGION
 }
@@ -278,21 +267,6 @@ Replace the following placeholders:
 <TabItem label="Google Cloud">
 
 ```hcl
-terraform {
-  required_providers {
-    teleport = {
-      source  = "terraform.releases.teleport.dev/gravitational/teleport"
-      version = "(=teleport.plugin.version=)"
-    }
-
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 5.5.0"
-    }
-
-  }
-}
-
 provider "google" {
   project = GOOGLE_CLOUD_REGION
   region  = GOOGLE_CLOUD_PROJECT
@@ -318,20 +292,6 @@ Replace the following placeholders:
 <TabItem label="Azure">
 
 ```hcl
-terraform {
-  required_providers {
-    teleport = {
-      source  = "terraform.releases.teleport.dev/gravitational/teleport"
-      version = "(=teleport.plugin.version=)"
-    }
-
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 3.0.0"
-    }
-  }
-}
-
 provider "teleport" {
   identity_file_path = "terraform-identity"
   # Update addr to point to your Teleport Cloud tenant URL's host:port
