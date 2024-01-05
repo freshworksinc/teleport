@@ -180,7 +180,7 @@ func (p *kubeProxyClientStreams) Close() error {
 		p.sizeQueue.Close()
 	}
 	p.wg.Wait()
-	return trace.Wrap(p.proxy.Close())
+	return nil
 }
 
 // multiResizeQueue is a merged queue of multiple terminal size queues.
@@ -272,7 +272,7 @@ type party struct {
 	ID        uuid.UUID
 	Client    remoteClient
 	Mode      types.SessionParticipantMode
-	closeC    chan struct{}
+	closeC    chan error
 	closeOnce sync.Once
 }
 
@@ -283,13 +283,14 @@ func newParty(ctx authContext, mode types.SessionParticipantMode, client remoteC
 		ID:     uuid.New(),
 		Client: client,
 		Mode:   mode,
-		closeC: make(chan struct{}),
+		closeC: make(chan error, 1),
 	}
 }
 
 // InformClose informs the party that he must leave the session.
-func (p *party) InformClose() {
+func (p *party) InformClose(err error) {
 	p.closeOnce.Do(func() {
+		p.closeC <- err
 		close(p.closeC)
 	})
 }
@@ -372,6 +373,9 @@ type session struct {
 	// decremented when he leaves - it waits until the session leave events
 	// are emitted for every party before returning.
 	partiesWg sync.WaitGroup
+
+	err   error
+	errMu sync.Mutex
 }
 
 // newSession creates a new session in pending mode.
@@ -612,8 +616,12 @@ func (s *session) launch() error {
 
 	s.io.On()
 	if err = executor.StreamWithContext(s.streamContext, options); err != nil {
+		s.errMu.Lock()
+		s.err = err
+		s.errMu.Unlock()
 		s.reportErrorToSessionRecorder(err)
 		s.log.WithError(err).Warning("Executor failed while streaming.")
+
 		return trace.Wrap(err)
 	}
 	return nil
@@ -747,12 +755,6 @@ func (s *session) lockedSetupLaunch(request *remoteCommandRequest, q url.Values,
 		defer s.eventsWaiter.Done()
 		s.mu.Lock()
 		defer s.mu.Unlock()
-
-		for _, party := range s.parties {
-			if err := party.Client.sendStatus(errExec); err != nil {
-				s.forwarder.log.WithError(err).Warning("Failed to send status. Exec command was aborted by client.")
-			}
-		}
 
 		serverMetadata := apievents.ServerMetadata{
 			ServerID:        s.forwarder.cfg.HostID,
@@ -1055,14 +1057,7 @@ func (s *session) unlockedLeave(id uuid.UUID) (bool, error) {
 		errs = append(errs, trace.Wrap(err))
 	}
 
-	party.InformClose()
-	defer func() {
-		if err := party.Client.Close(); err != nil {
-			s.log.WithError(err).Error("Error closing party")
-			errs = append(errs, trace.Wrap(err))
-		}
-	}()
-
+	party.InformClose(s.err)
 	if len(s.parties) == 0 || id == s.initiator {
 		go func() {
 			// Currently, Teleport closes the session when the initiator exits.
@@ -1165,7 +1160,7 @@ func (s *session) Close() error {
 		s.mu.Lock()
 		// terminate all active parties in the session.
 		for _, party := range s.parties {
-			party.InformClose()
+			party.InformClose(s.err)
 		}
 		recorder := s.recorder
 		s.mu.Unlock()

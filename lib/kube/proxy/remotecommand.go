@@ -19,6 +19,7 @@ package proxy
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -94,7 +95,7 @@ func (req remoteCommandRequest) eventPodMeta(ctx context.Context, creds kubeCred
 	return meta
 }
 
-func createRemoteCommandProxy(req remoteCommandRequest) (*remoteCommandProxy, error) {
+func upgradeRequestToRemoteCommandProxy(req remoteCommandRequest, exec func(*remoteCommandProxy) error) (any, error) {
 	var (
 		proxy *remoteCommandProxy
 		err   error
@@ -107,11 +108,17 @@ func createRemoteCommandProxy(req remoteCommandRequest) (*remoteCommandProxy, er
 	if err != nil {
 		return nil, trace.Wrap(err)
 	}
+	defer proxy.Close()
+
 	if proxy.resizeStream != nil {
 		proxy.resizeQueue = newTermQueue(req.context, req.onResize)
 		go proxy.resizeQueue.handleResizeEvents(proxy.resizeStream)
 	}
-	return proxy, nil
+	err = exec(proxy)
+	if err := proxy.sendStatus(err); err != nil {
+		log.Warningf("Failed to send status: %v", err)
+	}
+	return nil, nil
 }
 
 func createSPDYStreams(req remoteCommandRequest) (*remoteCommandProxy, error) {
@@ -222,19 +229,22 @@ func (s *remoteCommandProxy) options() remotecommand.StreamOptions {
 	return opts
 }
 
-func (s *remoteCommandProxy) sendStatus(err error) error {
+func (s *remoteCommandProxy) sendStatus(err error) (returnErr error) {
 	if err == nil {
-		return s.writeStatus(&apierrors.StatusError{ErrStatus: metav1.Status{
+		returnErr = s.writeStatus(&apierrors.StatusError{ErrStatus: metav1.Status{
 			Status: metav1.StatusSuccess,
 		}})
+		return
 	}
-	if statusErr, ok := err.(*apierrors.StatusError); ok {
-		return s.writeStatus(statusErr)
+	var statusErr *apierrors.StatusError
+	if errors.As(err, &statusErr) {
+		returnErr = s.writeStatus(statusErr)
+		return
 	}
-
-	if exitErr, ok := err.(utilexec.ExitError); ok && exitErr.Exited() {
+	var exitErr utilexec.ExitError
+	if errors.As(err, &exitErr) && exitErr.Exited() {
 		rc := exitErr.ExitStatus()
-		return s.writeStatus(&apierrors.StatusError{ErrStatus: metav1.Status{
+		returnErr = s.writeStatus(&apierrors.StatusError{ErrStatus: metav1.Status{
 			Status: metav1.StatusFailure,
 			Reason: remotecommandconsts.NonZeroExitCodeReason,
 			Details: &metav1.StatusDetails{
@@ -247,6 +257,7 @@ func (s *remoteCommandProxy) sendStatus(err error) error {
 			},
 			Message: fmt.Sprintf("command terminated with non-zero exit code: %v", exitErr),
 		}})
+		return
 	}
 	// kubernetes client-go errorDecoderV4 parses the metav1.Status and returns the `fmt.Errorf(status.Message)` for every case except
 	// errors with reason =  NonZeroExitCodeReason for which it returns an exec.CodeExitError.
@@ -254,7 +265,7 @@ func (s *remoteCommandProxy) sendStatus(err error) error {
 	// to the status.Message. This happens because the error is sent after the connection was upgraded to a bidirectional stream.
 	// This hack is here to recreate the forbidden message and return it back to the user terminal
 	if strings.Contains(err.Error(), "is forbidden:") {
-		return s.writeStatus(&apierrors.StatusError{
+		returnErr = s.writeStatus(&apierrors.StatusError{
 			ErrStatus: metav1.Status{
 				Status:  metav1.StatusFailure,
 				Code:    http.StatusForbidden,
@@ -262,10 +273,13 @@ func (s *remoteCommandProxy) sendStatus(err error) error {
 				Message: err.Error(),
 			},
 		})
+		return
 	}
 
 	err = trace.BadParameter("error executing command in container: %v", err)
-	return s.writeStatus(apierrors.NewInternalError(err))
+	returnErr = s.writeStatus(apierrors.NewInternalError(err))
+
+	return
 }
 
 // streamAndReply holds both a Stream and a channel that is closed when the stream's reply frame is
