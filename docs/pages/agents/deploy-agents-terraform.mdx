@@ -84,7 +84,7 @@ a demo cluster using:
 <TabItem label="AWS">
 
 ```hcl
-module "teleport" {
+module "teleport_agent_pool" {
     cloud="aws"
     agent_count=2
     agent_roles=["Node"]
@@ -102,7 +102,7 @@ module "teleport" {
 <TabItem label="Google Cloud">
 
 ```hcl
-module "teleport" {
+module "teleport_agent_pool" {
     cloud="gcp"
     agent_count=2
     agent_roles=["Node"]
@@ -122,7 +122,7 @@ module "teleport" {
 <TabItem label="Azure">
 
 ```hcl
-module "teleport" {
+module "teleport_agent_pool" {
     cloud="azure"
     agent_count=2
     agent_roles=["Node"]
