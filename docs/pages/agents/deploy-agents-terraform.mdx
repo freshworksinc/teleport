@@ -61,7 +61,7 @@ a demo cluster using:
 
 - (!docs/pages/includes/tctl.mdx!)
 
-## Step 1/4. Import the Terraform module
+## Step 1/3. Import the Terraform module
 
 1. Navigate to the directory where you plan to organize files for your root
    Terraform module.
@@ -85,11 +85,12 @@ a demo cluster using:
 
 ```hcl
 module "teleport" {
+    cloud="aws"
     agent_count=2
     agent_roles=["Node"]
     proxy_service_address="mytenant.teleport.sh:443"
     region=""
-    source="github.com/gravitational/teleport/examples/agent-pool-terraform/aws"
+    source="github.com/gravitational/teleport/examples/agent-pool-terraform"
     subnet_id=""
     teleport_edition="oss"
     teleport_plugin_version="(=teleport.plugin.version=)"
@@ -102,13 +103,14 @@ module "teleport" {
 
 ```hcl
 module "teleport" {
+    cloud="gcp"
     agent_count=2
     agent_roles=["Node"]
     gcp_zone=""
     google_project=""
     proxy_service_address="mytenant.teleport.sh:443"
     region=""
-    source="github.com/gravitational/teleport/examples/agent-pool-terraform/aws"
+    source="github.com/gravitational/teleport/examples/agent-pool-terraform"
     subnet_id=""
     teleport_edition="oss"
     teleport_plugin_version="(=teleport.plugin.version=)"
@@ -121,13 +123,14 @@ module "teleport" {
 
 ```hcl
 module "teleport" {
+    cloud="azure"
     agent_count=2
     agent_roles=["Node"]
     azure_resource_group=""
     proxy_service_address="mytenant.teleport.sh:443"
     public_key_path=""
     region=""
-    source="github.com/gravitational/teleport/examples/agent-pool-terraform/aws"
+    source="github.com/gravitational/teleport/examples/agent-pool-terraform"
     subnet_id=""
     teleport_edition="oss"
     teleport_plugin_version="(=teleport.plugin.version=)"
@@ -148,7 +151,7 @@ Edit  the `module` block in `main.tf` as follows:
 
 1. Modify the elements of the `agent_roles` list.
 
-   The Teleport Auth Service associates the join token with one or more roles,
+   The Teleport Auth Service associates a join token with one or more roles,
    identifying the Teleport services that are allowed to use the token. Modify
    `agent_roles` to include the token roles that correspond to the Teleport
    services you plan to run on your agent nodes:
@@ -163,6 +166,25 @@ Edit  the `module` block in `main.tf` as follows:
 
    The values of `agent_roles` also determine which Teleport services each agent
    deployed by the module will run.
+
+   Each virtual machine launched by `agent-pool-terraform` runs a script on
+   startup that installs Teleport on the host, then writes a configuration file
+   to the default location, `/etc/teleport.yaml`. 
+   
+   The configuration file enables each Teleport service you list in the value of
+   the `agent_roles` input variable. For example, if the value of `agent_roles`
+   is `["Node", "Db"]`, the configuration file enables the Teleport SSH Service
+   and Teleport Database Service.
+   
+   If the value of the `agent_roles` input variable includes the `Node` role,
+   the configuration also adds the `role: agent-pool` label to the Teleport SSH
+   Service on each instance. This makes it easier to access hosts in the agent
+   pool later.
+   
+   In the default configuration, only the Teleport SSH Service is enabled.
+   
+   The script makes Teleport the only option for accessing agent instances by
+   disabling OpenSSH on startup and deleting any authorized public keys.
 
 1. Assign `proxy_service_address` to the host and HTTPS port of your Teleport
    Proxy Service, e.g., `mytenant.teleport.sh:443`.
@@ -233,7 +255,7 @@ Edit  the `module` block in `main.tf` as follows:
 </TabItem>
 </Tabs>
 
-## Step 2/4. Add provider configurations
+## Step 2/3. Add provider configurations
 
 In this step, you will configure the `agent-pool-terraform` module for your
 Teleport cluster and cloud provider.
@@ -312,32 +334,7 @@ Replace the following placeholders:
 </TabItem>
 </Tabs>
 
-## Step 3/4. Edit the agent configuration
-
-{/*TODO: merge this with the part that introduces agent_roles*/}
-
-Each virtual machine launched by the module runs a script on startup that
-installs Teleport on the host, then writes a configuration file to the default
-location, `/etc/teleport.yaml`. 
-
-The configuration file enables each Teleport service you associate with the join
-token using the `agent_roles` input variable. For example, if the value of
-`agent_roles` is `["Node", "Db"]`, the configuration file enables the Teleport
-SSH Service and Teleport Database Service.
-
-If the value of the `agent_roles` input variable includes the `Node` role, the
-configuration also adds the `role: agent-pool` label to the Teleport SSH Service
-on each instance. This makes it easier to access hosts in the agent pool later.
-
-Finally, the script restarts Teleport on the host to apply the new
-configuration.
-
-In the default configuration, only the Teleport SSH Service is enabled.
-
-The script makes Teleport the only option for accessing agent instances by
-disabling OpenSSH on startup and deleting any authorized public keys.
-
-## Step 4/4. Verify the deployment
+## Step 3/3. Verify the deployment
 
 Make sure your cloud provider credentials are available to Terraform using the
 standard approach for your organization.
