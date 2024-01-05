@@ -3970,10 +3970,32 @@ func (a *ServerWithRoles) DeleteNamespace(name string) error {
 
 // GetRoles returns a list of roles
 func (a *ServerWithRoles) GetRoles(ctx context.Context) ([]types.Role, error) {
-	if err := a.action(apidefaults.Namespace, types.KindRole, types.VerbList, types.VerbRead); err != nil {
+	authErr := a.action(apidefaults.Namespace, types.KindRole, types.VerbList, types.VerbRead)
+	if authErr == nil {
+		return a.authServer.GetRoles(ctx)
+	}
+
+	roles, err := a.authServer.GetRoles(ctx)
+	if err != nil {
+		// If we get an error here, let's return the previous auth error.
+		return nil, trace.Wrap(authErr)
+	}
+
+	var filteredRoles []types.Role
+	// See if the user has access to these roles through things like where clauses.
+	for _, role := range roles {
+		sctx := &services.Context{User: a.context.User, Resource: role}
+		if err := a.actionWithContext(sctx, apidefaults.Namespace, types.KindRole, types.VerbList, types.VerbRead); err == nil {
+			filteredRoles = append(filteredRoles, role)
+		}
+	}
+
+	// If we found no roles, let's return the previous auth error.
+	if len(filteredRoles) == 0 {
 		return nil, trace.Wrap(err)
 	}
-	return a.authServer.GetRoles(ctx)
+
+	return filteredRoles, nil
 }
 
 func (a *ServerWithRoles) validateRole(ctx context.Context, role types.Role) error {
@@ -4018,7 +4040,8 @@ func (a *ServerWithRoles) validateRole(ctx context.Context, role types.Role) err
 
 // CreateRole creates a new role.
 func (a *ServerWithRoles) CreateRole(ctx context.Context, role types.Role) (types.Role, error) {
-	if err := a.action(apidefaults.Namespace, types.KindRole, types.VerbCreate); err != nil {
+	sctx := &services.Context{User: a.context.User, Resource: role}
+	if err := a.actionWithContext(sctx, apidefaults.Namespace, types.KindRole, types.VerbCreate); err != nil {
 		return nil, trace.Wrap(err)
 	}
 
@@ -4036,7 +4059,8 @@ func (a *ServerWithRoles) CreateRole(ctx context.Context, role types.Role) (type
 
 // UpdateRole updates an existing role.
 func (a *ServerWithRoles) UpdateRole(ctx context.Context, role types.Role) (types.Role, error) {
-	if err := a.action(apidefaults.Namespace, types.KindRole, types.VerbUpdate); err != nil {
+	sctx := &services.Context{User: a.context.User, Resource: role}
+	if err := a.actionWithContext(sctx, apidefaults.Namespace, types.KindRole, types.VerbUpdate); err != nil {
 		return nil, trace.Wrap(err)
 	}
 
@@ -4054,7 +4078,8 @@ func (a *ServerWithRoles) UpdateRole(ctx context.Context, role types.Role) (type
 
 // UpsertRole creates or updates role.
 func (a *ServerWithRoles) UpsertRole(ctx context.Context, role types.Role) (types.Role, error) {
-	if err := a.action(apidefaults.Namespace, types.KindRole, types.VerbCreate, types.VerbUpdate); err != nil {
+	sctx := &services.Context{User: a.context.User, Resource: role}
+	if err := a.actionWithContext(sctx, apidefaults.Namespace, types.KindRole, types.VerbCreate, types.VerbUpdate); err != nil {
 		return nil, trace.Wrap(err)
 	}
 
@@ -4196,18 +4221,42 @@ func (a *ServerWithRoles) GetRole(ctx context.Context, name string) (types.Role,
 	// Current-user exception: we always allow users to read roles
 	// that they hold.  This requirement is checked first to avoid
 	// misleading denial messages in the logs.
-	if !slices.Contains(a.context.User.GetRoles(), name) {
-		if err := a.action(apidefaults.Namespace, types.KindRole, types.VerbRead); err != nil {
-			return nil, trace.Wrap(err)
-		}
+	if slices.Contains(a.context.User.GetRoles(), name) {
+		return a.authServer.GetRole(ctx, name)
 	}
-	return a.authServer.GetRole(ctx, name)
+
+	authErr := a.action(apidefaults.Namespace, types.KindRole, types.VerbRead)
+	if authErr == nil {
+		return a.authServer.GetRole(ctx, name)
+	}
+
+	// See if the user has access to this individual role.
+	role, err := a.authServer.GetRole(ctx, name)
+	if err != nil {
+		return nil, trace.Wrap(authErr)
+	}
+
+	sctx := &services.Context{User: a.context.User, Resource: role}
+	if err := a.actionWithContext(sctx, apidefaults.Namespace, types.KindRole, types.VerbRead); err != nil {
+		return nil, trace.Wrap(err)
+	}
+
+	return role, nil
 }
 
 // DeleteRole deletes role by name
 func (a *ServerWithRoles) DeleteRole(ctx context.Context, name string) error {
-	if err := a.action(apidefaults.Namespace, types.KindRole, types.VerbDelete); err != nil {
-		return trace.Wrap(err)
+	if authErr := a.action(apidefaults.Namespace, types.KindRole, types.VerbDelete); authErr != nil {
+		// See if the user has access to this individual role.
+		role, err := a.authServer.GetRole(ctx, name)
+		if err != nil {
+			return trace.Wrap(authErr)
+		}
+
+		sctx := &services.Context{User: a.context.User, Resource: role}
+		if err := a.actionWithContext(sctx, apidefaults.Namespace, types.KindRole, types.VerbRead); err != nil {
+			return trace.Wrap(authErr)
+		}
 	}
 
 	if err := authz.AuthorizeAdminAction(ctx, &a.context); err != nil {
