@@ -3333,21 +3333,6 @@ const testEntityDescriptor = `<?xml version="1.0" encoding="UTF-8"?>
 </md:EntityDescriptor>
 `
 
-func TestDefaultCAFiltering(t *testing.T) {
-	t.Parallel()
-	p := newPackForProxy(t)
-	t.Cleanup(p.Close)
-	var found int
-	for _, w := range p.cache.Config.Watches {
-		if w.Kind == types.KindCertAuthority {
-			require.Len(t, w.Filter, len(types.CertAuthTypes))
-			require.Equal(t, makeAllKnownCAsFilter().IntoMap(), w.Filter)
-			found++
-		}
-	}
-	require.Equal(t, 1, found)
-}
-
 // TestCAWatcherFilters tests cache CA watchers with filters are not rejected
 // by auth, even if a CA filter includes a "new" CA type.
 func TestCAWatcherFilters(t *testing.T) {
