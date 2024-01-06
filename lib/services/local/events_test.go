@@ -118,7 +118,7 @@ func fetchEvent(t *testing.T, w types.Watcher, timeout time.Duration) types.Even
 	case <-timeoutC:
 		require.Fail(t, "Timeout waiting for event", w.Error())
 	case <-w.Done():
-		require.Fail(t, "Watcher exited with error %v", w.Error())
+		require.Fail(t, "Watcher exited with error", w.Error())
 	case ev = <-w.Events():
 	}
 	return ev

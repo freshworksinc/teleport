@@ -179,7 +179,7 @@ func ForAuth(cfg Config) Config {
 func ForProxy(cfg Config) Config {
 	cfg.target = "proxy"
 	cfg.Watches = []types.WatchKind{
-		{Kind: types.KindCertAuthority, LoadSecrets: false},
+		{Kind: types.KindCertAuthority, LoadSecrets: false, Filter: makeAllKnownCAsFilter().IntoMap()},
 		{Kind: types.KindClusterName},
 		{Kind: types.KindClusterAuditConfig},
 		{Kind: types.KindClusterNetworkingConfig},
@@ -236,7 +236,7 @@ func ForProxy(cfg Config) Config {
 func ForRemoteProxy(cfg Config) Config {
 	cfg.target = "remote-proxy"
 	cfg.Watches = []types.WatchKind{
-		{Kind: types.KindCertAuthority, LoadSecrets: false},
+		{Kind: types.KindCertAuthority, LoadSecrets: false, Filter: makeAllKnownCAsFilter().IntoMap()},
 		{Kind: types.KindClusterName},
 		{Kind: types.KindClusterAuditConfig},
 		{Kind: types.KindClusterNetworkingConfig},
@@ -268,7 +268,7 @@ func ForRemoteProxy(cfg Config) Config {
 func ForOldRemoteProxy(cfg Config) Config {
 	cfg.target = "remote-proxy-old"
 	cfg.Watches = []types.WatchKind{
-		{Kind: types.KindCertAuthority, LoadSecrets: false},
+		{Kind: types.KindCertAuthority, LoadSecrets: false, Filter: makeAllKnownCAsFilter().IntoMap()},
 		{Kind: types.KindClusterName},
 		{Kind: types.KindClusterAuditConfig},
 		{Kind: types.KindClusterNetworkingConfig},
@@ -328,7 +328,7 @@ func ForNode(cfg Config) Config {
 func ForKubernetes(cfg Config) Config {
 	cfg.target = "kube"
 	cfg.Watches = []types.WatchKind{
-		{Kind: types.KindCertAuthority, LoadSecrets: false},
+		{Kind: types.KindCertAuthority, LoadSecrets: false, Filter: makeAllKnownCAsFilter().IntoMap()},
 		{Kind: types.KindClusterName},
 		{Kind: types.KindClusterAuditConfig},
 		{Kind: types.KindClusterNetworkingConfig},
@@ -348,7 +348,7 @@ func ForKubernetes(cfg Config) Config {
 func ForApps(cfg Config) Config {
 	cfg.target = "apps"
 	cfg.Watches = []types.WatchKind{
-		{Kind: types.KindCertAuthority, LoadSecrets: false},
+		{Kind: types.KindCertAuthority, LoadSecrets: false, Filter: makeAllKnownCAsFilter().IntoMap()},
 		{Kind: types.KindClusterName},
 		{Kind: types.KindClusterAuditConfig},
 		{Kind: types.KindClusterNetworkingConfig},
@@ -370,7 +370,7 @@ func ForApps(cfg Config) Config {
 func ForDatabases(cfg Config) Config {
 	cfg.target = "db"
 	cfg.Watches = []types.WatchKind{
-		{Kind: types.KindCertAuthority, LoadSecrets: false},
+		{Kind: types.KindCertAuthority, LoadSecrets: false, Filter: makeAllKnownCAsFilter().IntoMap()},
 		{Kind: types.KindClusterName},
 		{Kind: types.KindClusterAuditConfig},
 		{Kind: types.KindClusterNetworkingConfig},
@@ -392,7 +392,7 @@ func ForDatabases(cfg Config) Config {
 func ForWindowsDesktop(cfg Config) Config {
 	cfg.target = "windows_desktop"
 	cfg.Watches = []types.WatchKind{
-		{Kind: types.KindCertAuthority, LoadSecrets: false},
+		{Kind: types.KindCertAuthority, LoadSecrets: false, Filter: makeAllKnownCAsFilter().IntoMap()},
 		{Kind: types.KindClusterName},
 		{Kind: types.KindClusterAuditConfig},
 		{Kind: types.KindClusterNetworkingConfig},
@@ -412,7 +412,7 @@ func ForWindowsDesktop(cfg Config) Config {
 func ForDiscovery(cfg Config) Config {
 	cfg.target = "discovery"
 	cfg.Watches = []types.WatchKind{
-		{Kind: types.KindCertAuthority, LoadSecrets: false},
+		{Kind: types.KindCertAuthority, LoadSecrets: false, Filter: makeAllKnownCAsFilter().IntoMap()},
 		{Kind: types.KindClusterName},
 		{Kind: types.KindNamespace, Name: apidefaults.Namespace},
 		{Kind: types.KindNode},
@@ -432,7 +432,7 @@ func ForOkta(cfg Config) Config {
 	cfg.target = "okta"
 	cfg.Watches = []types.WatchKind{
 		{Kind: types.KindClusterName},
-		{Kind: types.KindCertAuthority, LoadSecrets: false},
+		{Kind: types.KindCertAuthority, LoadSecrets: false, Filter: makeAllKnownCAsFilter().IntoMap()},
 		{Kind: types.KindUser},
 		{Kind: types.KindAppServer},
 		{Kind: types.KindClusterNetworkingConfig},
@@ -793,11 +793,6 @@ func (c *Config) CheckAndSetDefaults() error {
 	}
 	if c.FanoutShards == 0 {
 		c.FanoutShards = 1
-	}
-	for i := range c.Watches {
-		if c.Watches[i].Kind == types.KindCertAuthority && len(c.Watches[i].Filter) == 0 {
-			c.Watches[i].Filter = makeAllKnownCAsFilter().IntoMap()
-		}
 	}
 	return nil
 }
