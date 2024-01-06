@@ -29,6 +29,7 @@ use ironrdp_session::{
 };
 use js_sys::Uint8Array;
 use log::{debug, warn};
+use std::convert::TryFrom;
 use wasm_bindgen::{prelude::*, Clamped};
 use web_sys::ImageData;
 
@@ -284,7 +285,7 @@ fn extract_smallest_rectangle(
 ) -> (InclusiveRectangle, Vec<u8>) {
     let pixel_size = usize::from(image.pixel_format().bytes_per_pixel());
 
-    let image_width = usize::from(image.width());
+    let image_width = usize::try_from(image.width()).unwrap();
     let image_stride = image_width * pixel_size;
 
     let region_top = usize::from(region.top);
@@ -320,7 +321,7 @@ fn extract_whole_rows(
 ) -> (InclusiveRectangle, Vec<u8>) {
     let pixel_size = usize::from(image.pixel_format().bytes_per_pixel());
 
-    let image_width = usize::from(image.width());
+    let image_width = usize::try_from(image.width()).unwrap();
     let image_stride = image_width * pixel_size;
 
     let region_top = usize::from(region.top);
