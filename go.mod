@@ -201,10 +201,10 @@ require (
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/distribution/reference v0.5.0
-	github.com/google/go-containerregistry v0.14.1-0.20230409045903-ed5c185df419
+	github.com/google/go-containerregistry v0.16.1
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/sigstore/cosign/v2 v2.0.2
-	github.com/sigstore/sigstore v1.6.4
+	github.com/sigstore/cosign/v2 v2.2.0
+	github.com/sigstore/sigstore v1.7.2
 )
 
 require (
@@ -425,7 +425,7 @@ require (
 	github.com/go-playground/validator/v10 v10.15.5 // indirect
 	github.com/golang-jwt/jwt/v5 v5.0.0 // indirect
 	github.com/google/gnostic-models v0.6.9-0.20230804172637-c7be7c783f49 // indirect
-	github.com/google/trillian v1.5.3 // indirect
+	github.com/google/pprof v0.0.0-20231023181126-ff6d637d2a7b // indirect
 	github.com/hashicorp/hcl v1.0.1-vault-5 // indirect
 	github.com/huandu/xstrings v1.3.3 // indirect
 	github.com/in-toto/in-toto-golang v0.9.0 // indirect
@@ -437,7 +437,10 @@ require (
 	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
+	github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
+	github.com/onsi/ginkgo/v2 v2.13.0 // indirect
+	github.com/onsi/gomega v1.29.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc5 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
@@ -447,8 +450,8 @@ require (
 	github.com/secure-systems-lab/go-securesystemslib v0.7.0 // indirect
 	github.com/shibumi/go-pathspec v1.3.0 // indirect
 	github.com/shopspring/decimal v1.2.0 // indirect
-	github.com/sigstore/rekor v1.1.1 // indirect
-	github.com/sigstore/timestamp-authority v1.1.1 // indirect
+	github.com/sigstore/rekor v1.2.2 // indirect
+	github.com/sigstore/timestamp-authority v1.1.2 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.10.0 // indirect
 	github.com/spf13/cast v1.5.1 // indirect
