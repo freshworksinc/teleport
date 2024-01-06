@@ -19,11 +19,17 @@
 package utils
 
 import (
+	"io"
+
 	"github.com/gravitational/trace"
-	"github.com/sirupsen/logrus"
 )
 
-// CreateSyslogHook always returns an error on Windows.
-func CreateSyslogHook() (logrus.Hook, error) {
+// NewSyslogHook always returns an error on Windows.
+func NewSyslogHook(w io.Writer) (logrus.Hook, error) {
+	return nil, trace.NotImplemented("cannot use syslog on Windows")
+}
+
+// NewSysLogWriter always returns an error on Windows.
+func NewSysLogWriter() (io.Writer, error) {
 	return nil, trace.NotImplemented("cannot use syslog on Windows")
 }
