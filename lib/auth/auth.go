@@ -498,6 +498,7 @@ type Services struct {
 	services.Embeddings
 	services.UserPreferences
 	services.PluginData
+	services.SCIM
 	usagereporter.UsageReporter
 	types.Events
 	events.AuditLogSessionStreamer
@@ -529,6 +530,11 @@ func (r *Services) GenerateAWSOIDCToken(ctx context.Context, req types.GenerateA
 // OktaClient returns the okta client.
 func (r *Services) OktaClient() services.Okta {
 	return r
+}
+
+// OktaClient returns the okta client.
+func (r *Services) SCIMClient() services.SCIM {
+	return r.SCIM
 }
 
 // AccessListClient returns the access list client.
@@ -1539,6 +1545,10 @@ func (a *Server) SetClock(clock clockwork.Clock) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 	a.clock = clock
+}
+
+func (a *Server) SetSCIMService(scim services.SCIM) {
+	a.Services.SCIM = scim
 }
 
 // SetAuditLog sets the server's audit log

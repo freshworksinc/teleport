@@ -30,6 +30,7 @@ import (
 	"github.com/gravitational/teleport/api/client"
 	"github.com/gravitational/teleport/api/client/externalauditstorage"
 	"github.com/gravitational/teleport/api/client/proto"
+	"github.com/gravitational/teleport/api/client/scim"
 	"github.com/gravitational/teleport/api/client/secreport"
 	apidefaults "github.com/gravitational/teleport/api/defaults"
 	assistpb "github.com/gravitational/teleport/api/gen/proto/go/assist/v1"
@@ -79,6 +80,8 @@ type Client struct {
 
 // Make sure Client implements all the necessary methods.
 var _ ClientI = &Client{}
+
+var _ services.SCIM = (*scim.Client)(nil)
 
 // NewClient creates a new API client with a connection to a Teleport server.
 //
@@ -438,6 +441,10 @@ func (c *Client) ListReleases(ctx context.Context) ([]*types.Release, error) {
 
 func (c *Client) OktaClient() services.Okta {
 	return c.APIClient.OktaClient()
+}
+
+func (c *Client) SCIMClient() services.SCIM {
+	return c.APIClient.SCIMClient()
 }
 
 // SecReportsClient returns a client for security reports.
@@ -909,6 +916,8 @@ type ClientI interface {
 	// still get an Okta client when calling this method, but all RPCs will return
 	// "not implemented" errors (as per the default gRPC behavior).
 	OktaClient() services.Okta
+
+	SCIMClient() services.SCIM
 
 	// AccessListClient returns an access list client.
 	// Clients connecting to older Teleport versions still get an access list client
