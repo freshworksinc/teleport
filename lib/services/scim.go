@@ -22,6 +22,8 @@ import (
 	scimpb "github.com/gravitational/teleport/api/gen/proto/go/teleport/scim/v1"
 )
 
+// SCIM is an internal abstraction for the SCIM provisioning service, allowing clients
+// running over GRPC and local clients to interact with the service in the same way.
 type SCIM interface {
 	Get(context.Context, *scimpb.GetRequest) (*scimpb.ScimResponse, error)
 }

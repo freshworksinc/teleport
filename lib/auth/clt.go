@@ -81,6 +81,7 @@ type Client struct {
 // Make sure Client implements all the necessary methods.
 var _ ClientI = &Client{}
 
+// Static asserton that the scim client actually implements the SCIM interface.
 var _ services.SCIM = (*scim.Client)(nil)
 
 // NewClient creates a new API client with a connection to a Teleport server.
@@ -917,6 +918,10 @@ type ClientI interface {
 	// "not implemented" errors (as per the default gRPC behavior).
 	OktaClient() services.Okta
 
+	// SCIMClient returns a client for the SCIM provisioning service. Clients
+	// connecting to OSS clusters will still get a client when calling this method,
+	// but the back-end service will fail all requests with "Not Implemented" as per the
+	// default GRPC behavior.
 	SCIMClient() services.SCIM
 
 	// AccessListClient returns an access list client.

@@ -768,11 +768,6 @@ func roleSpecForProxy(clusterName string) types.RoleSpecV6 {
 						),
 					).String(),
 				},
-
-				{
-					Resources: []string{types.KindPlugin},
-					Verbs:     []string{types.VerbList},
-				},
 			},
 		},
 	}
