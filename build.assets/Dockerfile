@@ -67,7 +67,7 @@ RUN git clone --depth=1 https://github.com/Yubico/libfido2.git -b 1.12.0 && \
 # 4. Fast, language-dependent dependencies
 # 5. Multi-stage layer copies
 
-FROM ubuntu:18.04 AS buildbox
+FROM ubuntu:20.04 AS buildbox
 
 COPY locale.gen /etc/locale.gen
 COPY profile /etc/profile
